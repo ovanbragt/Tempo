@@ -3,6 +3,7 @@ import { seedOnce, askPersistent } from './db.js';
 import { state, loadState, sessionsOn, currentWeek, nextSession, raceInfo, logForSession } from './plan.js';
 import { viewLog } from './log.js';
 import { viewCalendar } from './calendar.js';
+import { viewProgress } from './progress.js';
 import * as D from './dates.js';
 import { esc, icon, fmtKm, fmtNum, fmtDuration, fmtPace } from './ui.js';
 
@@ -187,7 +188,7 @@ const ROUTES = {
   schemas: viewSchemas,
   loggen: (parts) => viewLog(parts),
   kalender: (parts) => viewCalendar(parts),
-  progressie: () => viewSoon('Progressie', 4, 'Grafieken per week, maand en jaar'),
+  progressie: () => viewProgress(),
 };
 
 function render() {
