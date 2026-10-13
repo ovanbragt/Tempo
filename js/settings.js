@@ -15,7 +15,7 @@ async function exportData() {
   const file = new File([JSON.stringify(payload, null, 1)], name, { type: 'application/json' });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title: 'Tempo back-up' });
+      await navigator.share({ files: [file] });
     } catch (e) {
       if (e.name === 'AbortError') return false;
       throw e;
