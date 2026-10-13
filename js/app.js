@@ -2,6 +2,7 @@ import { SPORTS } from './data.js';
 import { seedOnce, askPersistent } from './db.js';
 import { state, loadState, sessionsOn, currentWeek, nextSession, raceInfo, logForSession } from './plan.js';
 import { viewLog } from './log.js';
+import { viewCalendar } from './calendar.js';
 import * as D from './dates.js';
 import { esc, icon, fmtKm, fmtNum, fmtDuration, fmtPace } from './ui.js';
 
@@ -55,7 +56,7 @@ function sessionCard(s, { big = false } = {}) {
       ${log ? `<div class="done-line">${icon('check', 20)}<span><strong>Gelogd.</strong> ${esc(logSummary(log))}</span></div>
         <a class="btn-link" href="${logRoute(s)}">Log aanpassen</a>`
       : `<a class="btn" style="background:${sport.color}" href="${logRoute(s)}">Training loggen</a>
-        <a class="btn-link" href="#/kalender">Komt het vandaag niet uit? Verplaatsen</a>`}
+        <a class="btn-link" href="#/kalender/${s.date}/verplaats/${s.id}">Komt het niet uit? Verplaatsen</a>`}
     </div>
   </article>`;
 }
@@ -185,7 +186,7 @@ const ROUTES = {
   vandaag: viewVandaag,
   schemas: viewSchemas,
   loggen: (parts) => viewLog(parts),
-  kalender: () => viewSoon('Kalender', 3, 'Maandoverzicht en trainingen verplaatsen'),
+  kalender: (parts) => viewCalendar(parts),
   progressie: () => viewSoon('Progressie', 4, 'Grafieken per week, maand en jaar'),
 };
 

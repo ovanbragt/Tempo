@@ -211,3 +211,38 @@ select { appearance: none; -webkit-appearance: none; background-image: linear-gr
 .toast { position: fixed; left: 16px; right: 16px; bottom: calc(var(--tabbar) + var(--safe-b) + 12px); z-index: 20; max-width: 520px; margin: 0 auto; background: var(--ink); color: #fff; border-radius: 12px; padding: 12px 14px; font-weight: 600; font-size: 15px; opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s; pointer-events: none; }
 .toast.show { opacity: 1; transform: none; }
 .toast.warn { background: #9A3412; }
+
+/* ---------- Stap 3: kalender ---------- */
+.cal-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.cal-head h1 { font-size: 30px; }
+.round-link { width: 44px; height: 44px; border-radius: 22px; border: 1px solid var(--line); background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; flex: none; }
+.chip.pill { min-height: 36px; border-radius: 18px; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
+.chip.pill i { width: 8px; height: 8px; border-radius: 4px; display: block; }
+.cal { padding: 10px; }
+.cal-wd, .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cal-wd { text-align: center; font-size: 12px; font-weight: 700; color: var(--muted); padding-bottom: 6px; }
+.cal-grid { row-gap: 4px; }
+.cal-day { min-height: 46px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-weight: 600; font-size: 15px; color: var(--ink); text-decoration: none; }
+.cal-day.past > span:first-child { color: #6B6F78; }
+.cal-day.today { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.cal-day.sel { background: var(--ink); color: #fff; }
+.cal-day.sel > span:first-child { color: #fff; }
+.cal-dots { display: flex; gap: 3px; height: 10px; align-items: center; }
+.cal-dots i { width: 6px; height: 6px; border-radius: 3px; display: block; }
+.cal-dots b { display: flex; }
+.cal-day.sel .cal-dots b { color: #fff !important; }
+.cal-day.sel .cal-dots i { box-shadow: 0 0 0 1.5px #fff; }
+.cal-item { display: flex; flex-direction: column; gap: 12px; }
+.cal-item .row { display: flex; gap: 12px; }
+.btn.small { margin-top: 0; min-height: 44px; font-size: 14px; border-radius: 10px; }
+.btn-outline { min-height: 44px; border-radius: 10px; border: 1.5px solid var(--ink); background: #fff; color: var(--ink); font: 700 14px 'Barlow', sans-serif; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; padding: 0 12px; }
+.small-line { margin-top: 6px; padding: 6px 10px; font-size: 13px; }
+.move-panel { border: 2px solid var(--ink); display: flex; flex-direction: column; gap: 8px; }
+.move-panel h3 { font-size: 16px; font-weight: 700; }
+.move-opt { min-height: 56px; border-radius: 12px; border: 1px solid var(--field); background: #FAF9F6; padding: 8px 12px; display: flex; align-items: center; gap: 8px; text-align: left; font-family: 'Barlow', sans-serif; color: var(--ink); cursor: pointer; }
+.move-opt .grow { display: flex; flex-direction: column; }
+.move-opt.back { background: #E7F4EC; border-color: #B7DDC6; }
+.warn-tag { font-size: 12px; font-weight: 700; color: #9A3412; background: #FBEDE5; padding: 4px 8px; border-radius: 8px; flex: none; }
+.inline { display: flex; gap: 8px; }
+.inline .in { flex: 1; }
+.notice.ok { background: #E7F4EC; border-color: #B7DDC6; color: #0B5A35; }

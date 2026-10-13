@@ -59,6 +59,19 @@ export async function saveSetting(id, value) {
   state.settings[id] = value;
 }
 
+// Training naar een andere dag verplaatsen (terug naar de originele dag = verplaatsing wissen)
+export async function moveSession(id, date) {
+  const orig = state.plans.flatMap((p) => p.sessions).find((s) => s.id === id);
+  if (!orig) return;
+  if (date === orig.date) {
+    await db.remove('moves', id);
+    delete state.moves[id];
+  } else {
+    await db.put('moves', { id, date, movedAt: new Date().toISOString() });
+    state.moves[id] = date;
+  }
+}
+
 export function allSessions() {
   return state.plans.flatMap((p) => p.sessions.map((s) => ({ ...s, date: state.moves[s.id] || s.date, origDate: s.date })));
 }

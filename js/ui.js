@@ -59,6 +59,10 @@ export const ICONS = {
   logo: '<path d="M3 17l5-6 4 3 6-8"/><path d="M14 6h4v4"/>',
   share: '<path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v8h14v-8"/>',
   sync: '<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/>',
+  chev: '<path d="M9 6l6 6-6 6"/>',
+  back: '<path d="M15 6l-6 6 6 6"/>',
+  swap: '<path d="M7 7h12l-3-3M17 17H5l3 3"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
 };
 export const icon = (name, size = 24) => `<svg aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
 
