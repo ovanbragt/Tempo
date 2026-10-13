@@ -1,6 +1,6 @@
 // Zorgt dat Tempo ook zonder internet opent.
 // Eerst het netwerk proberen (zodat je altijd de nieuwste versie krijgt), anders de opgeslagen kopie.
-const CACHE = 'tempo-v4';
+const CACHE = 'tempo-v5';
 const SHELL = [
   './',
   './index.html',
@@ -20,7 +20,7 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
@@ -48,8 +48,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // cache: 'no-cache' = altijd even bij GitHub navragen of er een nieuwere versie is
   event.respondWith(
-    fetch(req)
+    fetch(req, { cache: 'no-cache' })
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy));

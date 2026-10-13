@@ -216,7 +216,22 @@ async function init() {
   }
   window.addEventListener('hashchange', render);
   render();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+  if ('serviceWorker' in navigator) {
+    // Nieuwe versie actief? Dan één keer herladen zodat je meteen de nieuwste app ziet.
+    const hadController = !!navigator.serviceWorker.controller;
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloaded) return;
+      reloaded = true;
+      location.reload();
+    });
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+      .then((reg) => {
+        reg.update().catch(() => {});
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+      })
+      .catch(() => {});
+  }
 }
 
 init();
