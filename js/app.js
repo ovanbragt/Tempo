@@ -4,6 +4,8 @@ import { state, loadState, sessionsOn, currentWeek, nextSession, raceInfo, logFo
 import { viewLog } from './log.js';
 import { viewCalendar } from './calendar.js';
 import { viewProgress } from './progress.js';
+import { viewSettings, backupDue } from './settings.js';
+import { viewSchemas } from './schemas.js';
 import * as D from './dates.js';
 import { esc, icon, fmtKm, fmtNum, fmtDuration, fmtPace } from './ui.js';
 
@@ -102,8 +104,10 @@ function viewVandaag() {
         <div class="muted strong">${esc(D.longLabel(today))}</div>
         <h1 class="display xl">Vandaag</h1>
       </div>
-      <div class="avatar" aria-hidden="true">OB</div>
+      <a class="avatar" href="#/instellingen" aria-label="Instellingen en back-up">OB</a>
     </header>
+
+    ${backupDue() ? `<a class="card hint link" href="#/instellingen">${icon('share', 22)}<div><strong>Tijd voor een back-up.</strong> Je gegevens staan alleen op deze telefoon. Tik hier om een back-up te bewaren.</div></a>` : ''}
 
     ${standalone ? '' : `<div class="card hint">${icon('share', 22)}<div><strong>Zet Tempo op je beginscherm.</strong> Tik in Safari op Deel en kies "Zet op beginscherm". Dan opent Tempo als app, ook zonder internet.</div></div>`}
 
@@ -126,7 +130,7 @@ function viewVandaag() {
           const ss = sessionsOn(d);
           const isToday = d === today;
           const allDone = ss.length && ss.every((s) => logForSession(s.id));
-          const label = ss.length ? ss.map((s) => (s.sport === 'strength' ? `Kracht ${s.workout}` : s.kind === 'Interval' ? 'Interval' : s.race ? 'Race' : `${fmtKm(s.km)} km`)).join(' + ') : 'Rust';
+          const label = ss.length ? ss.map((s) => (s.sport === 'strength' ? `Kracht ${s.workout}` : s.sport === 'swim' ? `Zwem ${fmtNum(s.meters, 0)} m` : s.kind === 'Interval' ? 'Interval' : s.race ? 'Race' : `${fmtKm(s.km)} km`)).join(' + ') : 'Rust';
           return `<div class="day${isToday ? ' today' : ''}${allDone ? ' done' : ''}" aria-label="${D.WD_LONG[i]} ${D.parse(d).getDate()}: ${esc(label)}${allDone ? ', gelogd' : ''}">
             <span class="wd">${D.WD_SHORT[i]}</span>
             <span class="dn">${D.parse(d).getDate()}</span>
@@ -147,34 +151,6 @@ function viewVandaag() {
   </main>`;
 }
 
-function viewSchemas() {
-  const today = D.today();
-  return `<main class="page">
-    <header class="page-head"><h1 class="display xl">Schema's</h1></header>
-    <h2 class="h2">Actief</h2>
-    ${state.plans.map((p) => {
-      const sport = SPORTS[p.sport];
-      const week = currentWeek(p, today);
-      const pct = Math.max(2, Math.round((week / p.weeks) * 100));
-      const upcoming = p.sessions.filter((s) => (state.moves[s.id] || s.date) >= today).length;
-      const done = p.sessions.filter((s) => logForSession(s.id)).length;
-      return `<article class="card plan">
-        <div class="topbar" style="background:${sport.color}"></div>
-        <div class="session-body">
-          <div class="eyebrow" style="color:${sport.color}">${esc(sport.label.toUpperCase())} · ${p.perWeek}× PER WEEK</div>
-          <div class="row-title lg">${esc(p.name)}</div>
-          <div class="muted small">${esc(p.goal)}</div>
-          <div class="muted small">${esc(p.days)}</div>
-          <div class="bar light"><div style="width:${pct}%;background:${sport.color}"></div></div>
-          <div class="plan-foot"><span>Week ${week} van ${p.weeks}</span><span class="muted">${esc(p.phase(week))}</span></div>
-          <div class="muted small">${done} gelogd · nog ${upcoming} trainingen tot ${esc(D.dayMonth(p.end))}</div>
-        </div>
-      </article>`;
-    }).join('')}
-    <div class="card soon"><div class="eyebrow">VOLGENDE STAPPEN</div><div class="row-title">Nieuw schema maken</div><div class="muted small">Hardlopen, kracht en zwemmen op basis van je doel. Dit komt in een volgende stap.</div></div>
-  </main>`;
-}
-
 function viewSoon(title, step, text) {
   return `<main class="page">
     <header class="page-head"><h1 class="display xl">${esc(title)}</h1></header>
@@ -185,10 +161,11 @@ function viewSoon(title, step, text) {
 // ---------- Router ----------
 const ROUTES = {
   vandaag: viewVandaag,
-  schemas: viewSchemas,
+  schemas: (parts) => viewSchemas(parts),
   loggen: (parts) => viewLog(parts),
   kalender: (parts) => viewCalendar(parts),
   progressie: () => viewProgress(),
+  instellingen: () => viewSettings(),
 };
 
 function render() {

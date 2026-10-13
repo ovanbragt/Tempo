@@ -2,8 +2,8 @@
 import { STRENGTH_HISTORY } from './data.js';
 
 const DB_NAME = 'tempo';
-const DB_VERSION = 1;
-const STORES = ['logs', 'moves', 'measurements', 'settings'];
+const DB_VERSION = 2;
+export const STORES = ['logs', 'moves', 'measurements', 'settings', 'plans'];
 
 let dbPromise;
 
@@ -37,6 +37,7 @@ export const db = {
   get: (store, id) => run(store, 'readonly', (s) => s.get(id)),
   put: (store, value) => run(store, 'readwrite', (s) => s.put(value)),
   remove: (store, id) => run(store, 'readwrite', (s) => s.delete(id)),
+  clear: (store) => run(store, 'readwrite', (s) => s.clear()),
 };
 
 // Eerste keer openen: eerdere krachttrainingen uit de spreadsheet inladen.

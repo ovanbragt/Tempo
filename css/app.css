@@ -146,7 +146,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid #F08A4B; outline-offs
 
 .seg { display: grid; background: var(--line); border-radius: 12px; padding: 4px; }
 .seg4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.seg a { min-height: 40px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 15px; color: #3F434B; text-decoration: none; }
+.seg a { min-height: 40px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; color: #3F434B; text-decoration: none; }
 .seg a.on { background: #fff; color: var(--ink); font-weight: 700; }
 
 .form { display: flex; flex-direction: column; gap: 12px; }
@@ -289,3 +289,25 @@ select { appearance: none; -webkit-appearance: none; background-image: linear-gr
 .delta-good { color: #0B5A35; font-weight: 600; }
 .delta-bad { color: #9A3412; font-weight: 600; }
 .btn-outline.wide { width: 100%; text-decoration: none; min-height: 48px; }
+
+/* ---------- Stap 5: Garmin, back-up, schema's ---------- */
+a.avatar { text-decoration: none; }
+.garmin { display: flex; flex-direction: column; gap: 10px; border: 1.5px solid var(--ink); }
+.garmin-row { display: flex; gap: 10px; align-items: center; }
+.garmin-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: center; flex: none; }
+.file-btn { position: relative; cursor: pointer; }
+.file-btn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+[data-garmin-out] { background: #E7F4EC; color: #0B5A35; border-radius: 10px; padding: 8px 10px; font-weight: 600; }
+.howto summary, .weeks summary { cursor: pointer; font-weight: 600; font-size: 14px; color: var(--str); min-height: 40px; display: flex; align-items: center; }
+.howto ol { margin: 4px 0 0; padding-left: 20px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.daychips { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.daychips .chip { padding: 0; }
+.weeklist { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.wk-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; border-bottom: 1px solid #EEEBE5; padding-bottom: 4px; margin-bottom: 4px; }
+.wk-row { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 8px; font-size: 14px; padding: 2px 0; }
+.wk-row.done span:last-child { text-decoration: line-through; color: var(--muted); }
+.wk-detail { padding-left: 96px; margin-top: -2px; margin-bottom: 4px; }
+.btn-link.danger { color: #9A3412; }
+.btn-link.left { justify-content: flex-start; gap: 4px; padding: 0; min-height: 36px; text-decoration: none; }
+.preview { padding: 0; overflow: hidden; }
+.card.hint.link { text-decoration: none; color: inherit; }

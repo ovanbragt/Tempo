@@ -11,10 +11,16 @@ export const state = {
   settings: {},
 };
 
+// Zelfgemaakte schema's worden als gewone gegevens bewaard; de fasenaam komt uit een lijst per week.
+export function hydratePlan(p) {
+  return { ...p, custom: true, phase: (w) => (p.phaseNames && p.phaseNames[w - 1]) || '' };
+}
+
 export async function loadState() {
-  const [moves, logs, measurements, settings] = await Promise.all([
-    db.all('moves'), db.all('logs'), db.all('measurements'), db.all('settings'),
+  const [moves, logs, measurements, settings, plans] = await Promise.all([
+    db.all('moves'), db.all('logs'), db.all('measurements'), db.all('settings'), db.all('plans'),
   ]);
+  state.plans = [...buildPlans(), ...plans.map(hydratePlan)];
   state.moves = Object.fromEntries(moves.map((m) => [m.id, m.date]));
   for (const l of logs) {
     if (l.sport === 'strength' && l.volume == null) l.volume = strengthVolume(l.sets);
@@ -69,6 +75,24 @@ export async function moveSession(id, date) {
   } else {
     await db.put('moves', { id, date, movedAt: new Date().toISOString() });
     state.moves[id] = date;
+  }
+}
+
+export function planById(id) {
+  return state.plans.find((p) => p.id === id);
+}
+
+export async function savePlan(plan) {
+  const { phase, custom, ...data } = plan;
+  await db.put('plans', data);
+  state.plans = [...state.plans.filter((p) => p.id !== plan.id), hydratePlan(data)];
+}
+
+export async function deletePlan(id) {
+  await db.remove('plans', id);
+  state.plans = state.plans.filter((p) => p.id !== id);
+  for (const key of Object.keys(state.moves)) {
+    if (key.startsWith(`${id}-`)) { await db.remove('moves', key); delete state.moves[key]; }
   }
 }
 

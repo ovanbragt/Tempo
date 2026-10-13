@@ -14,5 +14,11 @@ Persoonlijke fitness-app voor kracht, hardlopen en zwemmen: schema's, trainingen
 - `js/data.js` – de schema's (Dom tot Domloop 2027, Full Body A/B)
 - `js/db.js` – opslag op de telefoon
 - `js/dates.js` – datumhulpjes
+- `js/log.js` – trainingen en metingen loggen
+- `js/calendar.js` – kalender en verplaatsen
+- `js/progress.js` – progressie en grafieken
+- `js/fit.js` – Garmin .fit/.zip inlezen
+- `js/generator.js` en `js/schemas.js` – nieuwe schema's maken
+- `js/settings.js` – back-up en instellingen
 - `sw.js` – zorgt dat de app ook offline werkt
 - `manifest.webmanifest`, `icons/` – installeren op het beginscherm

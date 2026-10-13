@@ -1,6 +1,7 @@
 // Stap 2: trainingen en metingen loggen.
 import { EXERCISES } from './data.js';
-import { state, saveLog, deleteLog, saveMeasurement, deleteMeasurement, saveSetting, sessionsAround, defaultSession, sessionById, logForSession } from './plan.js';
+import { readGarminFile, matchIntervalLaps } from './fit.js';
+import { state, planById, saveLog, deleteLog, saveMeasurement, deleteMeasurement, saveSetting, sessionsAround, defaultSession, sessionById, logForSession } from './plan.js';
 import * as D from './dates.js';
 import { esc, icon, num, parseTime, fmtPace, fmtDuration, fmtNum, fmtKm, toast } from './ui.js';
 
@@ -80,6 +81,31 @@ function bindChips(root, attr, hiddenName) {
   });
 }
 
+function garminCard(kind) {
+  return `<section class="card garmin">
+    <div class="garmin-row">
+      <div class="garmin-icon">${icon('sync', 22)}</div>
+      <div class="grow"><div class="strong">Ophalen uit Garmin</div><div class="muted small">Kies het .fit- of .zip-bestand van je ${kind}. De velden hieronder worden dan ingevuld.</div></div>
+    </div>
+    <label class="btn-outline file-btn">Bestand kiezen<input type="file" data-garmin hidden></label>
+    <div class="muted small" data-garmin-out hidden></div>
+    <details class="howto"><summary>Hoe krijg ik dat bestand?</summary>
+      <ol>
+        <li>Open <strong>connect.garmin.com</strong> in Safari of op je computer en open de activiteit.</li>
+        <li>Tik op het tandwiel of de drie puntjes en kies <strong>Exporteer origineel</strong> (Export Original).</li>
+        <li>Er wordt een .zip opgeslagen in Bestanden. Kies dat bestand hier.</li>
+      </ol>
+    </details>
+  </section>`;
+}
+
+function localDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function localTime(d) {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 const newId = (p) => `${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
 // =====================================================================
@@ -127,12 +153,14 @@ function viewStrength(sessionId) {
   }
   const key = session ? session.id : `vrij-${workout}`;
   const deload = !!(session && session.deload);
+  const plan = session ? planById(session.planId) : null;
+  const exercises = (plan && plan.workouts && plan.workouts[workout]) || EXERCISES[workout];
   const last = lastStrengthLog(workout);
   const draft = state.settings[`draft-${key}`] || {};
   const existing = session && logForSession(session.id);
 
   const rows = [];
-  const exHtml = EXERCISES[workout].map((ex) => {
+  const exHtml = exercises.map((ex) => {
     const sides = ex.unilateral ? ['L', 'R'] : [null];
     const nSets = deload ? 2 : ex.sets;
     const advice = sides.map((side) => {
@@ -177,7 +205,7 @@ function viewStrength(sessionId) {
     ${segments('kracht')}
     ${chooser('strength', 'kracht', key, [['vrij-A', 'Losse training A'], ['vrij-B', 'Losse training B']])}
     <div>
-      <div class="eyebrow" style="color:var(--str)">FULL BODY A/B${session ? ` · WEEK ${session.week}` : ''}${deload ? ' · DELOAD' : ''}</div>
+      <div class="eyebrow" style="color:var(--str)">${esc((plan ? plan.name : 'Full Body A/B').toUpperCase())}${session ? ` · WEEK ${session.week}` : ''}${deload ? ' · DELOAD' : ''}</div>
       <h1 class="display xl">Training ${workout}</h1>
       <div class="muted">${session ? esc(D.longLabel(session.date)) : 'Losse training'}${last ? ` · vorige keer ${esc(D.shortLabel(last.date))}` : ''}</div>
       ${existing ? `<div class="notice">Deze training is al gelogd op ${esc(D.shortLabel(existing.date))}. Opslaan overschrijft die log.</div>` : ''}
@@ -317,6 +345,8 @@ function viewRun(sessionId) {
       ${existing ? `<div class="notice">Deze training is al gelogd. Opslaan overschrijft die log.</div>` : ''}
     </div>
 
+    ${garminCard('loop')}
+
     ${iv ? `<div class="card dark grid3">
       <div><div class="eyebrow light">DOELTEMPO</div><div class="display md">${zoneTxt ? zoneTxt.replace(' min/km', '') : '–'}</div></div>
       <div><div class="eyebrow light">PER ${iv.dist >= 1000 ? fmtNum(iv.dist / 1000) + ' KM' : iv.dist + ' M'}</div><div class="display md">${perRep || '–'}</div></div>
@@ -336,6 +366,7 @@ function viewRun(sessionId) {
     </section>` : ''}
 
     <section class="card form">
+      <input type="hidden" name="importDate"><input type="hidden" name="source" value="handmatig">
       <h2 class="h2">Totaal${iv || (session && session.kind !== 'Wedstrijd') ? ' (incl. in- en uitlopen)' : ''}</h2>
       <div class="grid2">
         <label class="field"><span>AFSTAND (KM)</span><input class="in" name="km" inputmode="decimal" placeholder="0,0"></label>
@@ -345,7 +376,6 @@ function viewRun(sessionId) {
       <label class="field"><span>GEM. HARTSLAG (OPTIONEEL)</span><input class="in" name="hr" inputmode="numeric" placeholder="slagen per minuut"></label>
       ${rpeChips('rpe')}
       <label class="field"><span>NOTITIE</span><textarea class="in" name="note" rows="2" placeholder="Bijv. wind tegen, zware benen, gel getest…"></textarea></label>
-      <p class="muted small">Ophalen uit Garmin komt in stap 5.</p>
     </section>
     <button type="button" class="btn" style="background:var(--run)" data-save>Training opslaan</button>
     <section><div class="section-head"><h2>Recent gelogd</h2></div>${recentList(recent, 'Nog geen looptrainingen gelogd.')}</section>
@@ -374,6 +404,34 @@ function viewRun(sessionId) {
       }
     }
     root.addEventListener('input', update);
+    root.querySelector('[data-garmin]').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const out = root.querySelector('[data-garmin-out]');
+      try {
+        const a = await readGarminFile(file);
+        if (a.sport === 'swim') { toast('Dit is een zwemtraining. Kies hem bij Zwemmen.', 'warn'); return; }
+        const set = (n, v) => { root.querySelector(`[name="${n}"]`).value = v; };
+        if (a.distanceM) set('km', String(Math.round(a.distanceM / 10) / 100).replace('.', ','));
+        if (a.durationSec) set('time', fmtDuration(a.durationSec));
+        if (a.avgHr) set('hr', String(a.avgHr));
+        set('importDate', localDate(a.start));
+        set('source', 'garmin');
+        let repInfo = '';
+        if (iv) {
+          const times = matchIntervalLaps(a.laps, iv.dist, iv.count);
+          root.querySelectorAll('[data-rep]').forEach((inp, i) => { inp.value = times[i] ? fmtDuration(times[i]) : ''; });
+          repInfo = times.length ? ` · ${times.length} van ${iv.count} herhalingen herkend` : ' · herhalingen niet herkend (vul ze zelf in)';
+        }
+        const otherDay = session && localDate(a.start) !== session.date ? ` Let op: gelopen op ${D.shortLabel(localDate(a.start))}, gepland op ${D.shortLabel(session.date)}.` : '';
+        out.hidden = false;
+        out.textContent = `Ingelezen: ${D.shortLabel(localDate(a.start))} om ${localTime(a.start)} · ${fmtKm((a.distanceM || 0) / 1000)} km${repInfo}.${otherDay} Controleer en tik op Opslaan.`;
+        update();
+        toast('Garmin-training ingelezen');
+      } catch (err) {
+        toast(err.message || 'Dit bestand kan ik niet lezen.', 'warn');
+      } finally { e.target.value = ''; }
+    });
     root.addEventListener('click', async (e) => {
       if (!e.target.closest('[data-save]')) return;
       const km = num(val('km')); const t = parseTime(val('time'));
@@ -384,10 +442,10 @@ function viewRun(sessionId) {
         id: prevLog ? prevLog.id : newId('loop'),
         sport: 'run', sessionId: session ? session.id : null, week: session ? session.week : null,
         kind: session ? session.kind : 'Losse loop', title: session ? session.title : 'Losse loop',
-        date: logDate(session), km, durationSec: t, paceSec: t ? t / km : null,
+        date: val('importDate') || logDate(session), km, durationSec: t, paceSec: t ? t / km : null,
         hr: num(val('hr')), rpe: num(val('rpe')), note: val('note').trim(),
         reps: reps && reps.some(Boolean) ? reps : null, repDist: iv ? iv.dist : null,
-        source: 'handmatig', savedAt: new Date().toISOString(),
+        source: val('source'), savedAt: new Date().toISOString(),
       });
       toast(`Loop opgeslagen · ${fmtKm(km)} km${t ? ` in ${fmtDuration(t)}` : ''}`);
       location.hash = '#/vandaag';
@@ -399,19 +457,25 @@ function viewRun(sessionId) {
 // =====================================================================
 // ZWEMMEN
 // =====================================================================
-function viewSwim() {
+function viewSwim(sessionId) {
+  const today = D.today();
+  const swimSessions = sessionsAround('swim', today, 7, 7);
+  const session = sessionId === 'vrij' ? null : sessionId ? sessionById(sessionId) : (swimSessions.length ? defaultSession('swim', today) : null);
   const recent = state.logs.filter((l) => l.sport === 'swim').slice(0, 5).map((l) => ({
     id: l.id, kind: 'log', title: `Zwemmen · ${fmtNum(l.meters, 0)} m`, sub: `${D.shortLabel(l.date)} · ${l.stroke}${l.durationSec ? ` · ${fmtDuration(l.durationSec)}` : ''}`,
   }));
   const lastPool = state.logs.find((l) => l.sport === 'swim')?.pool || 25;
   const html = `<main class="page">
     ${segments('zwemmen')}
+    ${swimSessions.length ? chooser('swim', 'zwemmen', session ? session.id : 'vrij', [['vrij', 'Vrije training (niet uit schema)']]) : ''}
     <div>
-      <div class="eyebrow" style="color:var(--swim)">ZWEMMEN · VRIJE TRAINING</div>
-      <h1 class="display xl">Banen zwemmen</h1>
-      <div class="muted">${esc(D.longLabel(D.today()))}</div>
+      <div class="eyebrow" style="color:var(--swim)">ZWEMMEN · ${session ? `WEEK ${session.week}` : 'VRIJE TRAINING'}</div>
+      <h1 class="display xl">${esc(session ? session.title : 'Banen zwemmen')}</h1>
+      <div class="muted">${esc(session ? `${D.longLabel(session.date)} · ${session.detail}` : D.longLabel(today))}</div>
     </div>
+    ${garminCard('zwemtraining')}
     <section class="card form">
+      <input type="hidden" name="importDate"><input type="hidden" name="source" value="handmatig">
       <fieldset class="field"><legend>BADLENGTE</legend>
         <div class="grid2">${[25, 50].map((m) => `<button type="button" class="chip big" data-pool="${m}" aria-pressed="${m === lastPool}">${m} meter</button>`).join('')}</div>
         <input type="hidden" name="pool" value="${lastPool}">
@@ -419,7 +483,7 @@ function viewSwim() {
       <div class="field"><span>AANTAL BANEN</span>
         <div class="stepper">
           <button type="button" class="round" data-step="-1" aria-label="Baan minder">−</button>
-          <input class="in big" name="laps" inputmode="numeric" value="40" aria-label="Aantal banen">
+          <input class="in big" name="laps" inputmode="numeric" value="${session && session.meters ? Math.round(session.meters / lastPool) : 40}" aria-label="Aantal banen">
           <button type="button" class="round" data-step="1" aria-label="Baan meer">+</button>
         </div>
       </div>
@@ -440,6 +504,7 @@ function viewSwim() {
   </main>`;
 
   function mount(root, rerender) {
+    bindNav(root);
     bindDelete(root, rerender);
     bindChips(root, 'pool', 'pool');
     bindChips(root, 'stroke', 'stroke');
@@ -452,6 +517,28 @@ function viewSwim() {
       root.querySelector('[data-out="pace"]').textContent = meters && t ? `${fmtPace(t / (meters / 100))} per 100 m` : '–:– per 100 m';
     }
     root.addEventListener('input', update);
+    root.querySelector('[data-garmin]').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const a = await readGarminFile(file);
+        if (a.sport === 'run') { toast('Dit is een looptraining. Kies hem bij Hardlopen.', 'warn'); return; }
+        const pool = a.poolLength && [25, 50].includes(Math.round(a.poolLength)) ? Math.round(a.poolLength) : num(val('pool')) || 25;
+        root.querySelector(`[data-pool="${pool}"]`)?.click();
+        const laps = a.lengths || (a.distanceM ? Math.round(a.distanceM / pool) : null);
+        if (laps) root.querySelector('[name="laps"]').value = laps;
+        if (a.durationSec) root.querySelector('[name="time"]').value = fmtDuration(a.durationSec);
+        root.querySelector('[name="importDate"]').value = localDate(a.start);
+        root.querySelector('[name="source"]').value = 'garmin';
+        const out = root.querySelector('[data-garmin-out]');
+        out.hidden = false;
+        out.textContent = `Ingelezen: ${D.shortLabel(localDate(a.start))} om ${localTime(a.start)} · ${fmtNum(a.distanceM || laps * pool, 0)} m in een ${pool} m-bad. Controleer en tik op Opslaan.`;
+        update();
+        toast('Garmin-training ingelezen');
+      } catch (err) {
+        toast(err.message || 'Dit bestand kan ik niet lezen.', 'warn');
+      } finally { e.target.value = ''; }
+    });
     root.addEventListener('click', async (e) => {
       const step = e.target.closest('[data-step]');
       if (step) {
@@ -464,10 +551,12 @@ function viewSwim() {
       const pool = num(val('pool')) || 25; const laps = num(val('laps')) || 0;
       const meters = laps * pool; const t = parseTime(val('time'));
       if (!meters) { toast('Vul het aantal banen in.', 'warn'); return; }
+      const prevLog = session && logForSession(session.id);
       await saveLog({
-        id: newId('zwem'), sport: 'swim', date: D.today(), pool, laps, meters, durationSec: t,
+        id: prevLog ? prevLog.id : newId('zwem'), sport: 'swim', sessionId: session ? session.id : null, week: session ? session.week : null,
+        date: val('importDate') || logDate(session), pool, laps, meters, durationSec: t,
         pace100Sec: t ? t / (meters / 100) : null, stroke: val('stroke'), rpe: num(val('rpe')), note: val('note').trim(),
-        source: 'handmatig', savedAt: new Date().toISOString(),
+        source: val('source'), savedAt: new Date().toISOString(),
       });
       toast(`Zwemtraining opgeslagen · ${fmtNum(meters, 0)} m`);
       location.hash = '#/vandaag';
@@ -553,7 +642,7 @@ function viewMeasure() {
 export function viewLog(parts) {
   const [seg, id] = parts;
   if (seg === 'hardlopen') return viewRun(id);
-  if (seg === 'zwemmen') return viewSwim();
+  if (seg === 'zwemmen') return viewSwim(id);
   if (seg === 'meting') return viewMeasure();
   if (seg === 'kracht') return viewStrength(id);
   // Geen keuze: kies de sport van de training van vandaag
