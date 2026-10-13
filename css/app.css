@@ -118,13 +118,10 @@ h2.display { font-size: 34px; }
 .start-bg {
   position: absolute; inset: 0;
   background:
-    radial-gradient(120% 70% at 0% 0%, rgba(37, 70, 184, .95) 0%, rgba(37, 70, 184, 0) 60%),
-    radial-gradient(90% 60% at 100% 45%, rgba(240, 138, 75, .9) 0%, rgba(194, 65, 12, 0) 70%),
+    linear-gradient(160deg, rgba(37, 70, 184, .55) 0%, rgba(37, 70, 184, 0) 42%),
+    linear-gradient(180deg, rgba(21, 23, 28, .5) 0%, rgba(21, 23, 28, 0) 18%, rgba(21, 23, 28, 0) 36%, rgba(194, 65, 12, .72) 60%, rgba(21, 23, 28, .96) 84%, #15171C 100%),
+    url('../img/start.jpg') 50% 18% / cover no-repeat,
     linear-gradient(180deg, #1D2A5C 0%, #7A2E14 55%, #15171C 88%);
-}
-.start-bg::after {
-  content: ''; position: absolute; inset: -20%;
-  background: repeating-linear-gradient(115deg, rgba(255, 255, 255, .05) 0 2px, transparent 2px 22px);
 }
 .start-top { position: absolute; top: calc(22px + var(--safe-t)); left: 20px; display: flex; align-items: center; gap: 8px; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: .12em; }
 .start-bottom { position: absolute; left: 20px; right: 20px; bottom: calc(32px + var(--safe-b)); display: flex; flex-direction: column; gap: 14px; max-width: 520px; margin: 0 auto; }
