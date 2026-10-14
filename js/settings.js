@@ -70,9 +70,13 @@ export function viewSettings() {
 
     <section class="card form">
       <h2 class="h2">Persoonlijk</h2>
-      <label class="field"><span>LENGTE (CM), VOOR JE BMI</span>
-        <div class="inline"><input class="in" name="height" inputmode="numeric" value="${state.settings.height ? esc(state.settings.height) : ''}" placeholder="bijv. 182"><button type="button" class="btn-outline" data-height>Opslaan</button></div>
-      </label>
+      <label class="field"><span>LENGTE (CM), VOOR JE BMI</span><input class="in" name="height" inputmode="numeric" value="${state.settings.height ? esc(state.settings.height) : ''}" placeholder="bijv. 182"></label>
+      <div class="grid2">
+        <label class="field"><span>GEBOORTEDATUM</span><input class="in" type="date" name="birthDate" value="${esc(state.settings.birthDate || '')}" max="${D.today()}"></label>
+        <label class="field"><span>GESLACHT</span><select name="sex"><option value="">Kies…</option><option value="man"${state.settings.sex === 'man' ? ' selected' : ''}>Man</option><option value="vrouw"${state.settings.sex === 'vrouw' ? ' selected' : ''}>Vrouw</option></select></label>
+      </div>
+      <p class="muted small">Geboortedatum en geslacht zijn nodig voor je fitnessleeftijd: je VO2 Max wordt vergeleken met het gemiddelde van leeftijdsgenoten. Alles blijft op deze telefoon.</p>
+      <button type="button" class="btn-outline" data-personal>Opslaan</button>
     </section>
 
     <section class="card">
@@ -89,11 +93,15 @@ export function viewSettings() {
           if (ok) { toast('Back-up gemaakt'); rerender(); }
         } catch (err) { toast('Back-up maken lukte niet. Probeer het opnieuw.', 'warn'); }
       }
-      if (e.target.closest('[data-height]')) {
-        const h = num(root.querySelector('[name="height"]').value);
-        if (!h || h < 100 || h > 250) { toast('Vul je lengte in centimeters in, bijv. 182.', 'warn'); return; }
-        await saveSetting('height', h);
-        toast('Lengte opgeslagen');
+      if (e.target.closest('[data-personal]')) {
+        const hv = root.querySelector('[name="height"]').value.trim();
+        const h = num(hv);
+        if (hv && (!h || h < 100 || h > 250)) { toast('Vul je lengte in centimeters in, bijv. 182.', 'warn'); return; }
+        if (h) await saveSetting('height', h);
+        await saveSetting('birthDate', root.querySelector('[name="birthDate"]').value || null);
+        await saveSetting('sex', root.querySelector('[name="sex"]').value || null);
+        toast('Opgeslagen');
+        if (location.hash.includes('terug=progressie')) location.hash = '#/progressie';
       }
     });
     root.querySelector('[data-import]').addEventListener('change', async (e) => {

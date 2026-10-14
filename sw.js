@@ -1,6 +1,6 @@
 // Zorgt dat Tempo ook zonder internet opent.
 // Eerst het netwerk proberen (zodat je altijd de nieuwste versie krijgt), anders de opgeslagen kopie.
-const CACHE = 'tempo-v8';
+const CACHE = 'tempo-v9';
 const SHELL = [
   './',
   './index.html',
@@ -18,6 +18,7 @@ const SHELL = [
   './js/settings.js',
   './js/generator.js',
   './js/schemas.js',
+  './js/fitness.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/apple-touch-icon.png',

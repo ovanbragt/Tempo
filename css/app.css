@@ -311,3 +311,17 @@ a.avatar { text-decoration: none; }
 .btn-link.left { justify-content: flex-start; gap: 4px; padding: 0; min-height: 36px; text-decoration: none; }
 .preview { padding: 0; overflow: hidden; }
 .card.hint.link { text-decoration: none; color: inherit; }
+
+/* ---------- Fitnessleeftijd ---------- */
+.fa-hero { display: flex; align-items: center; gap: 18px; background: var(--ink); color: #fff; border-radius: 14px; padding: 14px 16px; }
+.fa-hero .muted { color: #C9CCD3; }
+.fa-num { font-size: 64px; line-height: .9; }
+.fa-side { display: flex; flex-direction: column; gap: 3px; }
+.fa-hero .delta-good { color: #8FE0B0; font-weight: 700; }
+.fa-hero .delta-bad { color: #FDC4A3; font-weight: 700; }
+.factors { list-style: none; margin: 0; padding: 0; }
+.factors li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid #EEEBE5; }
+.fval { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; flex: none; }
+.ftag { font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 6px; white-space: nowrap; }
+.ftag.good { background: #E7F4EC; color: #0B5A35; }
+.ftag.warn { background: #FBEDE5; color: #9A3412; }

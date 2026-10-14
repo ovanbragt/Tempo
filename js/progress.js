@@ -3,6 +3,7 @@ import { EXERCISES } from './data.js';
 import { state, allSessions, logForSession } from './plan.js';
 import * as D from './dates.js';
 import { esc, fmtNum, fmtKm, fmtPace, fmtDuration } from './ui.js';
+import { fitnessAge, normAt, ageOn, WAIST_LIMIT } from './fitness.js';
 
 const ui = { period: 'week', metric: 'weight' };
 const PERIODS = [{ key: 'week', label: 'Week' }, { key: 'maand', label: 'Maand' }, { key: 'jaar', label: 'Jaar' }];
@@ -150,6 +151,79 @@ function vo2Block(runs, period, today) {
       <div class="tile"><div class="eyebrow">SINDS START</div><div class="display md">${first === last ? '–' : `${last.vo2 - first.vo2 > 0 ? '+' : ''}${fmtNum(last.vo2 - first.vo2, 0)}`}</div><div class="small muted">${first === last ? 'na je tweede meting' : `vanaf ${esc(D.shortLabel(first.date))}`}</div></div>
     </div>
     ${lineChart({ id: 'vo2', series: [{ name: '', color: 'var(--run)', points }], unit: 'ml/kg/min', digits: 0 })}`;
+}
+
+function factor({ label, value, note, status }) {
+  const tag = status === 'good' ? '<span class="ftag good">✓ gunstig</span>' : status === 'warn' ? '<span class="ftag warn">! aandachtspunt</span>' : '';
+  return `<li><div class="grow"><div class="strong">${esc(label)}</div><div class="muted small">${esc(note)}</div></div><div class="fval"><strong>${value}</strong>${tag}</div></li>`;
+}
+
+function fitnessSection(period, today) {
+  const { birthDate, sex, height } = state.settings;
+  const runsVo2 = state.logs.filter((l) => l.sport === 'run' && l.vo2).sort((a, b) => (a.date < b.date ? 1 : -1));
+  const head = '<div class="eyebrow" style="color:var(--run)">FITNESS</div><h2 class="h2">Fitnessleeftijd</h2>';
+  if (!birthDate || !sex) {
+    return `<section class="card prog">${head}
+      <p class="small">Vul eerst je geboortedatum en geslacht in. Dan vergelijkt Tempo je VO2 Max met het gemiddelde van leeftijdsgenoten.</p>
+      <a class="btn-outline wide" href="#/instellingen/terug=progressie">Naar instellingen</a></section>`;
+  }
+  const age = ageOn(birthDate, today);
+  if (!runsVo2.length) {
+    return `<section class="card prog">${head}
+      <p class="small">Vul bij je volgende loop je VO2 Max in (Loggen → Hardlopen). Daaruit berekent Tempo je fitnessleeftijd.</p></section>`;
+  }
+  const last = runsVo2[0];
+  const fa = fitnessAge(last.vo2, sex);
+  const prev = runsVo2.find((l) => fitnessAge(l.vo2, sex) !== fa);
+  const diffYears = fa - age;
+  const norm = normAt(age, sex);
+
+  // Andere factoren
+  const ms = state.measurements;
+  const latest = (k) => ms.find((m) => m[k] != null);
+  const previous = (k) => ms.filter((m) => m[k] != null)[1];
+  const hr = latest('hr'); const hrPrev = previous('hr');
+  const w = latest('weight');
+  const bmi = w && height ? w.weight / (height / 100) ** 2 : null;
+  const waist = latest('waist');
+  const fat = latest('fat'); const fatPrev = previous('fat');
+  const weekAgo = D.addDays(today, -6);
+  const week = state.logs.filter((l) => l.date >= weekAgo && l.date <= today);
+  const cardioMin = Math.round(week.filter((l) => l.sport !== 'strength').reduce((a, l) => a + (l.durationSec || 0), 0) / 60);
+  const hard = week.filter((l) => (l.sport === 'run' && (l.kind === 'Interval' || l.kind === 'Wedstrijd')) || (l.rpe && l.rpe >= 7)).length;
+  const strength = week.filter((l) => l.sport === 'strength').length;
+
+  const factors = [
+    factor({ label: 'VO2 Max', value: fmtNum(last.vo2, 0), note: `Gemiddeld voor ${sex === 'man' ? 'mannen' : 'vrouwen'} van ${age}: ${fmtNum(norm, 1)}. Dit bepaalt je fitnessleeftijd.`, status: last.vo2 >= norm ? 'good' : 'warn' }),
+    factor({ label: 'Rusthartslag', value: hr ? `${hr.hr} bpm` : '–', note: hr ? `Lager betekent meestal fitter.${hrPrev ? ` Vorige: ${hrPrev.hr} bpm.` : ''}` : 'Nog niet gemeten (Loggen → Meting).', status: hr && hrPrev ? (hr.hr < hrPrev.hr ? 'good' : hr.hr > hrPrev.hr ? 'warn' : '') : '' }),
+    factor({ label: 'BMI', value: bmi ? fmtNum(bmi) : '–', note: bmi ? 'Gezond volgens de WHO: 18,5 tot 25.' : height ? 'Nog geen gewicht gemeten.' : 'Vul je lengte in bij Instellingen.', status: bmi ? (bmi >= 18.5 && bmi < 25 ? 'good' : 'warn') : '' }),
+    factor({ label: 'Buikomvang', value: waist ? `${fmtNum(waist.waist)} cm` : '–', note: waist ? `Verhoogd risico vanaf ${WAIST_LIMIT[sex]} cm (WHO).` : 'Nog niet gemeten.', status: waist ? (waist.waist < WAIST_LIMIT[sex] ? 'good' : 'warn') : '' }),
+    factor({ label: 'Vetpercentage', value: fat ? `${fmtNum(fat.fat)}%` : '–', note: fat ? (fatPrev ? `Vorige: ${fmtNum(fatPrev.fat)}%.` : 'Volg vooral de trend.') : 'Nog niet gemeten.', status: fat && fatPrev ? (fat.fat < fatPrev.fat ? 'good' : fat.fat > fatPrev.fat ? 'warn' : '') : '' }),
+    factor({ label: 'Training afgelopen 7 dagen', value: `${cardioMin} min`, note: `Cardio (lopen en zwemmen), plus ${strength} krachttraining${strength === 1 ? '' : 'en'} en ${hard} zware training${hard === 1 ? '' : 'en'}. WHO-advies: minstens 150 minuten per week.`, status: cardioMin >= 150 ? 'good' : 'warn' }),
+  ].join('');
+
+  const points = {};
+  for (const l of [...runsVo2].reverse()) points[l.date] = fitnessAge(l.vo2, sex);
+  const series = [{ name: '', color: 'var(--run)', points: Object.entries(points).map(([date, v]) => ({ date, v })) }];
+
+  return `<section class="card prog">${head}
+    <div class="fa-hero">
+      <div><div class="display fa-num">${fa}</div><div class="muted small">jaar fitnessleeftijd</div></div>
+      <div class="fa-side">
+        <div class="strong">Je echte leeftijd: ${age}</div>
+        <div class="${diffYears <= 0 ? 'delta-good' : 'delta-bad'} small">${diffYears < 0 ? `${-diffYears} jaar jonger dan je leeftijd` : diffYears > 0 ? `${diffYears} jaar ouder dan je leeftijd` : 'precies je eigen leeftijd'}</div>
+        ${prev ? `<div class="muted small">Was ${fitnessAge(prev.vo2, sex)} op ${esc(D.shortLabel(prev.date))}</div>` : ''}
+      </div>
+    </div>
+    <p class="muted small">Op basis van je VO2 Max van ${esc(D.shortLabel(last.date))}: de leeftijd waarop ${fmtNum(last.vo2, 0)} gemiddeld is. Garmin rekent ook rusthartslag, BMI en intensiteit mee met een formule die niet openbaar is, dus jouw Garmin-getal kan een paar jaar afwijken.</p>
+    <h3 class="h3">Wat je fitnessleeftijd beïnvloedt</h3>
+    <ul class="factors">${factors}</ul>
+    <p class="muted small">Om je fitnessleeftijd te verlagen: verhoog je VO2 Max met intervallen en long runs, beweeg minstens 150 minuten per week en houd BMI en buikomvang in het gezonde gebied.</p>
+    ${series[0].points.length >= 2 ? `<h3 class="h3">Verloop</h3>${lineChart({ id: 'fa', series, unit: 'jaar', digits: 0 })}` : ''}
+    <details class="table-view"><summary>Hoe wordt dit berekend?</summary>
+      <p class="small">Tempo vergelijkt je VO2 Max met de gemiddelde VO2 Max per leeftijdsgroep uit de Noorse HUNT3-fitnessstudie (4.631 gezonde volwassenen, NTNU). Je fitnessleeftijd is de leeftijd waarop jouw VO2 Max precies gemiddeld is. De uitkomst ligt tussen 20 en 90 jaar.</p>
+    </details>
+  </section>`;
 }
 
 function runSection(period, today) {
@@ -324,6 +398,7 @@ export function viewProgress() {
   const html = `<main class="page">
     <header class="page-head"><h1 class="display xl">Progressie</h1></header>
     <nav class="seg seg3" aria-label="Periode">${PERIODS.map((x) => `<button type="button" data-period="${x.key}" class="${x.key === p ? 'on' : ''}" aria-pressed="${x.key === p}">${x.label}</button>`).join('')}</nav>
+    ${fitnessSection(p, today)}
     ${runSection(p, today)}
     ${strengthSection(p, today)}
     ${swimSection(p, today)}
