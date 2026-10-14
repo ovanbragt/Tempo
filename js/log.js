@@ -331,8 +331,9 @@ function viewRun(sessionId) {
   const zoneTxt = iv && iv.zone ? `${fmtPace(iv.zone[0])}–${fmtPace(iv.zone[1])} min/km` : '';
   const perRep = iv && iv.zone ? `${fmtDuration((iv.zone[0] * iv.dist) / 1000)}–${fmtDuration((iv.zone[1] * iv.dist) / 1000)}` : '';
 
+  const lastVo2 = state.logs.find((l) => l.sport === 'run' && l.vo2)?.vo2;
   const recent = state.logs.filter((l) => l.sport === 'run').slice(0, 5).map((l) => ({
-    id: l.id, kind: 'log', title: `${l.kind || 'Loop'} · ${fmtKm(l.km)} km`, sub: `${D.shortLabel(l.date)} · ${fmtDuration(l.durationSec)} · ${fmtPace(l.paceSec)} min/km`,
+    id: l.id, kind: 'log', title: `${l.kind || 'Loop'} · ${fmtKm(l.km)} km`, sub: `${D.shortLabel(l.date)} · ${fmtDuration(l.durationSec)} · ${fmtPace(l.paceSec)} min/km${l.vo2 ? ` · VO2 Max ${fmtNum(l.vo2, 0)}` : ''}`,
   }));
 
   const html = `<main class="page">
@@ -373,7 +374,11 @@ function viewRun(sessionId) {
         <label class="field"><span>TIJD</span><input class="in" name="time" inputmode="decimal" placeholder="u:mm:ss"></label>
       </div>
       <div class="readout"><span>GEM. TEMPO</span><strong data-out="pace">–:– min/km</strong></div>
-      <label class="field"><span>GEM. HARTSLAG (OPTIONEEL)</span><input class="in" name="hr" inputmode="numeric" placeholder="slagen per minuut"></label>
+      <div class="grid2">
+        <label class="field"><span>GEM. HARTSLAG (OPTIONEEL)</span><input class="in" name="hr" inputmode="numeric" placeholder="slagen per minuut"></label>
+        <label class="field"><span>VO2 MAX (OPTIONEEL)</span><input class="in" name="vo2" inputmode="decimal" placeholder="${lastVo2 ? `vorige: ${fmtNum(lastVo2, 0)}` : 'bijv. 44'}"></label>
+      </div>
+      <p class="muted small">VO2 Max vind je in Garmin Connect bij Prestatiestatistieken. De Garmin-import kan dit getal niet uitlezen, dus vul het zelf in als het veranderd is.</p>
       ${rpeChips('rpe')}
       <label class="field"><span>NOTITIE</span><textarea class="in" name="note" rows="2" placeholder="Bijv. wind tegen, zware benen, gel getest…"></textarea></label>
     </section>
@@ -443,7 +448,7 @@ function viewRun(sessionId) {
         sport: 'run', sessionId: session ? session.id : null, week: session ? session.week : null,
         kind: session ? session.kind : 'Losse loop', title: session ? session.title : 'Losse loop',
         date: val('importDate') || logDate(session), km, durationSec: t, paceSec: t ? t / km : null,
-        hr: num(val('hr')), rpe: num(val('rpe')), note: val('note').trim(),
+        hr: num(val('hr')), vo2: num(val('vo2')), rpe: num(val('rpe')), note: val('note').trim(),
         reps: reps && reps.some(Boolean) ? reps : null, repDist: iv ? iv.dist : null,
         source: val('source'), savedAt: new Date().toISOString(),
       });

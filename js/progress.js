@@ -133,6 +133,25 @@ function lineChart({ id, series, unit, digits = 1 }) {
 }
 
 // ---------- Onderdelen ----------
+function vo2Block(runs, period, today) {
+  const all = runs.filter((l) => l.vo2).sort((a, b) => (a.date < b.date ? 1 : -1));
+  const head = '<h3 class="h3">VO2 Max</h3>';
+  if (!all.length) return `${head}<p class="muted small">Nog geen VO2 Max ingevuld. Vul na een loop het getal van je Garmin in bij Loggen → Hardlopen.</p>`;
+  const [last, prev] = all;
+  const diff = prev ? last.vo2 - prev.vo2 : null;
+  const first = all[all.length - 1];
+  const from = period === 'week' ? D.addDays(today, -7 * 12) : period === 'maand' ? D.addDays(today, -365) : '0000';
+  const byDate = {};
+  for (const l of all.filter((x) => x.date >= from)) if (!byDate[l.date]) byDate[l.date] = l.vo2;
+  const points = Object.entries(byDate).map(([date, v]) => ({ date, v }));
+  return `${head}
+    <div class="tiles">
+      <div class="tile"><div class="eyebrow">NU</div><div class="display md">${fmtNum(last.vo2, 0)}</div><div class="small ${diff > 0 ? 'delta-good' : diff < 0 ? 'delta-bad' : 'muted'}">${diff != null && diff !== 0 ? `${diff > 0 ? '+' : ''}${fmtNum(diff, 0)} t.o.v. vorige` : esc(D.shortLabel(last.date))}</div></div>
+      <div class="tile"><div class="eyebrow">SINDS START</div><div class="display md">${first === last ? '–' : `${last.vo2 - first.vo2 > 0 ? '+' : ''}${fmtNum(last.vo2 - first.vo2, 0)}`}</div><div class="small muted">${first === last ? 'na je tweede meting' : `vanaf ${esc(D.shortLabel(first.date))}`}</div></div>
+    </div>
+    ${lineChart({ id: 'vo2', series: [{ name: '', color: 'var(--run)', points }], unit: 'ml/kg/min', digits: 0 })}`;
+}
+
 function runSection(period, today) {
   const keys = bucketList(period, today);
   const curKey = bucketKey(today, period);
@@ -178,6 +197,7 @@ function runSection(period, today) {
       <div><div class="eyebrow">TOTAAL GELOGD</div><div class="display md">${fmtKm(totalKm)} km</div></div>
       <div><div class="eyebrow">SNELSTE ≥ 5 KM</div><div class="display md">${best ? `${fmtPace(best.paceSec)}` : '–'}</div></div>
     </div>
+    ${vo2Block(runs, period, today)}
     <h3 class="h3">Op koers voor 5:30 min/km?</h3>
     <ul class="milestones">${ms}</ul>
   </section>`;
