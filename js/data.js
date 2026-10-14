@@ -73,6 +73,7 @@ function buildDomloop() {
     raceDate: '2027-03-20',
     raceName: 'Dom tot Domloop',
     goalTitle: '10 EM in 1:28:31',
+    goalSec: 5311,
     goalSub: '5:30 min/km · za 20 mrt 2027',
     weeks: 23,
     perWeek: 3,
@@ -136,6 +137,11 @@ function buildFullBody() {
 export function buildPlans() {
   return [buildDomloop(), buildFullBody()];
 }
+
+// Singelloop Utrecht (4 okt 2026), uit het Dom tot Domloop-schema: startpunt voor de voorspelling
+export const RUN_HISTORY = [
+  { id: 'hist-singelloop', sport: 'run', date: '2026-10-04', kind: 'Wedstrijd', title: 'Singelloop Utrecht', km: 10, durationSec: 3668, paceSec: 366.8, source: 'schema-document', savedAt: '2026-10-04T12:00:00.000Z' },
+];
 
 // Eerdere krachttrainingen uit de spreadsheet (Training A, week 1 en 2).
 // [kg, reps] per set; bij links/rechts: { L: [...], R: [...] }

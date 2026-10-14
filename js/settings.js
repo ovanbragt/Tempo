@@ -4,7 +4,7 @@ import { state, loadState, saveSetting } from './plan.js';
 import * as D from './dates.js';
 import { esc, num, toast, icon } from './ui.js';
 
-export const APP_VERSION = '1.0';
+export const APP_VERSION = '1.1';
 
 async function exportData() {
   const data = {};
@@ -49,13 +49,13 @@ async function importData(file) {
 
 export function backupDue() {
   const last = state.settings.lastBackup;
-  const hasData = state.logs.some((l) => l.source !== 'spreadsheet') || state.measurements.length;
+  const hasData = state.logs.some((l) => !['spreadsheet', 'schema-document'].includes(l.source)) || state.measurements.length;
   return hasData && (!last || D.daysBetween(last, D.today()) >= 14);
 }
 
 export function viewSettings() {
   const last = state.settings.lastBackup;
-  const ownLogs = state.logs.filter((l) => l.source !== 'spreadsheet').length;
+  const ownLogs = state.logs.filter((l) => !['spreadsheet', 'schema-document'].includes(l.source)).length;
   const html = `<main class="page">
     <header class="page-head"><h1 class="display xl">Instellingen</h1></header>
 

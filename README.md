@@ -20,5 +20,9 @@ Persoonlijke fitness-app voor kracht, hardlopen en zwemmen: schema's, trainingen
 - `js/fit.js` – Garmin .fit/.zip inlezen
 - `js/generator.js` en `js/schemas.js` – nieuwe schema's maken
 - `js/settings.js` – back-up en instellingen
+- `js/records.js` – persoonlijke records en wedstrijdvoorspelling
+- `js/timer.js` – rust-timer bij kracht
+- `js/weekly.js` – weekoverzicht en gemiste trainingen
+- `js/fitness.js` – fitnessleeftijd
 - `sw.js` – zorgt dat de app ook offline werkt
 - `manifest.webmanifest`, `icons/` – installeren op het beginscherm

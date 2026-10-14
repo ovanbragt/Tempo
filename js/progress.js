@@ -4,6 +4,7 @@ import { state, allSessions, logForSession } from './plan.js';
 import * as D from './dates.js';
 import { esc, fmtNum, fmtKm, fmtPace, fmtDuration } from './ui.js';
 import { fitnessAge, normAt, ageOn, WAIST_LIMIT } from './fitness.js';
+import { predictionLine, recordHistory } from './records.js';
 
 const ui = { period: 'week', metric: 'weight' };
 const PERIODS = [{ key: 'week', label: 'Week' }, { key: 'maand', label: 'Maand' }, { key: 'jaar', label: 'Jaar' }];
@@ -134,6 +135,33 @@ function lineChart({ id, series, unit, digits = 1 }) {
 }
 
 // ---------- Onderdelen ----------
+function predictionBlock(today) {
+  const plan = state.plans.filter((p) => p.raceDate && p.raceDate >= today && p.sport === 'run').sort((a, b) => (a.raceDate < b.raceDate ? -1 : 1))[0];
+  if (!plan) return '';
+  const p = predictionLine(plan, today);
+  const head = `<h3 class="h3">Voorspelling ${esc(plan.raceName)}</h3>`;
+  if (!p) return `${head}<p class="muted small">Log een loop van minstens 3 km met tijd, dan voorspelt Tempo je eindtijd.</p>`;
+  return `${head}
+    <div class="pred">
+      <div><div class="eyebrow">NU HAALBAAR</div><div class="display md">${fmtDuration(p.sec)}</div><div class="muted small">${fmtPace(p.pace)} min/km</div></div>
+      ${p.goal ? `<div><div class="eyebrow">JE DOEL</div><div class="display md">${fmtDuration(p.goal)}</div><div class="muted small">${fmtPace(p.goal / p.km)} min/km</div></div>` : ''}
+    </div>
+    ${p.gapText ? `<p class="small strong">${esc(p.gapText[0].toUpperCase() + p.gapText.slice(1))}.</p>` : ''}
+    <p class="muted small">Gebaseerd op je snelste loop van de afgelopen 6 weken: ${esc(p.basis)}. Rustige duurlopen geven een voorzichtige voorspelling; je toetsen en wedstrijden zeggen het meest. Intervallen tellen niet mee, omdat daar pauzes in zitten.</p>`;
+}
+
+function runRecordsBlock() {
+  const b = recordHistory().best;
+  const rows = [
+    b.pace5 && ['Snelste loop van 5 km of meer', `${fmtPace(b.pace5.pace)} min/km`, `${fmtKm(b.pace5.km)} km · ${D.dayMonth(b.pace5.date)}`],
+    b.pace10 && ['Snelste loop van 10 km of meer', `${fmtPace(b.pace10.pace)} min/km`, `${fmtKm(b.pace10.km)} km · ${D.dayMonth(b.pace10.date)}`],
+    b.longRun && ['Langste loop', `${fmtKm(b.longRun.km)} km`, D.dayMonth(b.longRun.date)],
+    b.longSwim && ['Langste zwemtraining', `${fmtNum(b.longSwim.m, 0)} m`, D.dayMonth(b.longSwim.date)],
+  ].filter(Boolean);
+  if (!rows.length) return '';
+  return `<h3 class="h3">Records</h3><ul class="kv">${rows.map(([l, v, sub]) => `<li><span>${esc(l)}</span><span><strong>${esc(v)}</strong> <span class="muted small">${esc(sub)}</span></span></li>`).join('')}</ul>`;
+}
+
 function vo2Block(runs, period, today) {
   const all = runs.filter((l) => l.vo2).sort((a, b) => (a.date < b.date ? 1 : -1));
   const head = '<h3 class="h3">VO2 Max</h3>';
@@ -271,6 +299,8 @@ function runSection(period, today) {
       <div><div class="eyebrow">TOTAAL GELOGD</div><div class="display md">${fmtKm(totalKm)} km</div></div>
       <div><div class="eyebrow">SNELSTE ≥ 5 KM</div><div class="display md">${best ? `${fmtPace(best.paceSec)}` : '–'}</div></div>
     </div>
+    ${predictionBlock(today)}
+    ${runRecordsBlock()}
     ${vo2Block(runs, period, today)}
     <h3 class="h3">Op koers voor 5:30 min/km?</h3>
     <ul class="milestones">${ms}</ul>

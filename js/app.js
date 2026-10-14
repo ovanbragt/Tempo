@@ -6,6 +6,8 @@ import { viewCalendar } from './calendar.js';
 import { viewProgress } from './progress.js';
 import { viewSettings, backupDue } from './settings.js';
 import { viewSchemas } from './schemas.js';
+import { weekSummaryHtml, missedHtml, bindToday } from './weekly.js';
+import { predictionLine } from './records.js';
 import * as D from './dates.js';
 import { esc, icon, fmtKm, fmtNum, fmtDuration, fmtPace } from './ui.js';
 
@@ -97,8 +99,9 @@ function viewVandaag() {
   const next = nextSession(today);
   const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const extraLogs = state.logs.filter((l) => l.date === today && (!l.sessionId || !todays.some((s) => s.id === l.sessionId)));
+  const pred = race ? predictionLine(race.plan, today) : null;
 
-  return `<main class="page">
+  const html = `<main class="page">
     <header class="page-head">
       <div>
         <div class="muted strong">${esc(D.longLabel(today))}</div>
@@ -117,7 +120,12 @@ function viewVandaag() {
       <div class="goal-sub">${esc(race.plan.goalSub)}</div>
       <div class="bar"><div style="width:${race.pct}%"></div></div>
       <div class="goal-sub small">Week ${race.week} van ${race.plan.weeks} · ${esc(race.plan.phase(race.week))}</div>
+      ${pred ? `<div class="goal-pred"><span>Voorspelling nu</span><strong>${esc(pred.text)}</strong></div>${pred.gapText ? `<div class="goal-sub small">${esc(pred.gapText)}</div>` : ''}` : ''}
     </a>` : ''}
+
+    ${weekSummaryHtml(today)}
+
+    ${missedHtml(today)}
 
     ${todays.length ? todays.map((s) => sessionCard(s, { big: true })).join('') : `<div class="card rest"><div class="eyebrow">RUSTDAG</div><div class="row-title">Vandaag staat er niets gepland.</div><div class="muted small">Herstel hoort bij het schema. Toch iets gedaan? <a href="#/loggen">Log het hier.</a></div></div>`}
 
@@ -149,6 +157,7 @@ function viewVandaag() {
 
     ${next ? `<section><div class="section-head"><h2>Volgende training</h2></div>${sessionCard(next)}</section>` : ''}
   </main>`;
+  return { html, mount: (root, rerender) => bindToday(root, rerender) };
 }
 
 function viewSoon(title, step, text) {

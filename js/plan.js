@@ -109,6 +109,23 @@ export function sessionsOn(date) {
   return allSessions().filter((s) => s.date === date).sort((a, b) => order[a.sport] - order[b.sport]);
 }
 
+export function isSkipped(id) {
+  return !!(state.settings.skipped || {})[id];
+}
+
+export async function setSkipped(id, on) {
+  const map = { ...(state.settings.skipped || {}) };
+  if (on) map[id] = new Date().toISOString().slice(0, 10); else delete map[id];
+  await saveSetting('skipped', map);
+}
+
+// Geplande trainingen van de afgelopen dagen die niet gelogd en niet overgeslagen zijn
+export function missedSessions(today, days = 3) {
+  const from = D.addDays(today, -days);
+  return allSessions().filter((s) => s.date >= from && s.date < today && !s.race && !logForSession(s.id) && !isSkipped(s.id))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
 export function logForSession(id) {
   return state.logs.find((l) => l.sessionId === id);
 }

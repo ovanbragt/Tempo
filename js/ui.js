@@ -67,7 +67,7 @@ export const ICONS = {
 export const icon = (name, size = 24) => `<svg aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
 
 let toastTimer;
-export function toast(message, kind = 'ok') {
+export function toast(message, kind = 'ok', ms = 3200) {
   let el = document.getElementById('toast');
   if (!el) {
     el = document.createElement('div');
@@ -77,6 +77,7 @@ export function toast(message, kind = 'ok') {
   }
   el.className = `toast ${kind} show`;
   el.textContent = message;
+  el.style.whiteSpace = 'pre-line';
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
 }

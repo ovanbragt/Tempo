@@ -1,6 +1,8 @@
 // Stap 2: trainingen en metingen loggen.
 import { EXERCISES } from './data.js';
 import { readGarminFile, matchIntervalLaps } from './fit.js';
+import { recordsForLog } from './records.js';
+import { startRest, stop as stopRest } from './timer.js';
 import { state, planById, saveLog, deleteLog, saveMeasurement, deleteMeasurement, saveSetting, sessionsAround, defaultSession, sessionById, logForSession } from './plan.js';
 import * as D from './dates.js';
 import { esc, icon, num, parseTime, fmtPace, fmtDuration, fmtNum, fmtKm, toast } from './ui.js';
@@ -104,6 +106,13 @@ function localDate(d) {
 }
 function localTime(d) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+// Opslaan-melding, met nieuwe records erbij als die er zijn
+function announce(message, logId) {
+  const recs = recordsForLog(logId);
+  if (recs.length) toast(`Nieuw record!\n${recs.map((r) => r.text).join('\n')}`, 'record', 6500);
+  else toast(message);
 }
 
 const newId = (p) => `${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
@@ -217,7 +226,7 @@ function viewStrength(sessionId) {
     </div>
     ${exHtml}
     <button type="button" class="btn" style="background:var(--str)" data-save>Training opslaan</button>
-    <p class="muted small center">Rust: grote oefeningen 2–3 min · isolatie en core 60–90 sec. Techniek gaat voor gewicht.</p>
+    <p class="muted small center">Na het afvinken van een set start de rust-timer: 2:30 voor grote oefeningen, 1:15 voor isolatie en core. Pas aan met −15 en +15. Techniek gaat voor gewicht.</p>
     <section><div class="section-head"><h2>Recent gelogd</h2></div>${recentList(recent, 'Nog niets gelogd.')}</section>
   </main>`;
 
@@ -266,6 +275,10 @@ function viewStrength(sessionId) {
         // Afvinken zonder reps ingevuld: zet de cursor in het reps-veld
         const repsEl = rowEl.querySelector('[data-f="reps"]');
         if (on && !repsEl.value) repsEl.focus();
+        if (on) {
+          const ex = exercises.find((x) => x.id === rowEl.dataset.row.split('|')[0]);
+          startRest(ex && (ex.group === 'onder' || ex.group === 'boven') ? 150 : 75);
+        }
         draftData[rowEl.dataset.row] = { ...(draftData[rowEl.dataset.row] || {}), done: on };
         persistDraft();
         update();
@@ -293,13 +306,15 @@ function viewStrength(sessionId) {
           else { sets[k].L = sets[k].L.filter(Boolean); sets[k].R = sets[k].R.filter(Boolean); }
         }
         const prevLog = session && logForSession(session.id);
-        await saveLog({
+        const saved = {
           id: prevLog ? prevLog.id : newId('kracht'),
           sport: 'strength', workout, sessionId: session ? session.id : null, week: session ? session.week : null,
           date: logDate(session), sets, volume, setCount: count, savedAt: new Date().toISOString(),
-        });
+        };
+        await saveLog(saved);
         await saveSetting(`draft-${key}`, null);
-        toast(`Training ${workout} opgeslagen · ${fmtNum(volume, 0)} kg volume`);
+        stopRest();
+        announce(`Training ${workout} opgeslagen · ${fmtNum(volume, 0)} kg volume`, saved.id);
         location.hash = '#/vandaag';
       }
     });
@@ -443,7 +458,7 @@ function viewRun(sessionId) {
       if (!km) { toast('Vul je afstand in.', 'warn'); return; }
       const reps = iv ? [...root.querySelectorAll('[data-rep]')].map((i) => parseTime(i.value)) : null;
       const prevLog = session && logForSession(session.id);
-      await saveLog({
+      const saved = {
         id: prevLog ? prevLog.id : newId('loop'),
         sport: 'run', sessionId: session ? session.id : null, week: session ? session.week : null,
         kind: session ? session.kind : 'Losse loop', title: session ? session.title : 'Losse loop',
@@ -451,8 +466,9 @@ function viewRun(sessionId) {
         hr: num(val('hr')), vo2: num(val('vo2')), rpe: num(val('rpe')), note: val('note').trim(),
         reps: reps && reps.some(Boolean) ? reps : null, repDist: iv ? iv.dist : null,
         source: val('source'), savedAt: new Date().toISOString(),
-      });
-      toast(`Loop opgeslagen · ${fmtKm(km)} km${t ? ` in ${fmtDuration(t)}` : ''}`);
+      };
+      await saveLog(saved);
+      announce(`Loop opgeslagen · ${fmtKm(km)} km${t ? ` in ${fmtDuration(t)}` : ''}`, saved.id);
       location.hash = '#/vandaag';
     });
   }
@@ -557,13 +573,14 @@ function viewSwim(sessionId) {
       const meters = laps * pool; const t = parseTime(val('time'));
       if (!meters) { toast('Vul het aantal banen in.', 'warn'); return; }
       const prevLog = session && logForSession(session.id);
-      await saveLog({
+      const saved = {
         id: prevLog ? prevLog.id : newId('zwem'), sport: 'swim', sessionId: session ? session.id : null, week: session ? session.week : null,
         date: val('importDate') || logDate(session), pool, laps, meters, durationSec: t,
         pace100Sec: t ? t / (meters / 100) : null, stroke: val('stroke'), rpe: num(val('rpe')), note: val('note').trim(),
         source: val('source'), savedAt: new Date().toISOString(),
-      });
-      toast(`Zwemtraining opgeslagen · ${fmtNum(meters, 0)} m`);
+      };
+      await saveLog(saved);
+      announce(`Zwemtraining opgeslagen · ${fmtNum(meters, 0)} m`, saved.id);
       location.hash = '#/vandaag';
     });
     update();

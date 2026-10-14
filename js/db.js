@@ -1,5 +1,5 @@
 // Opslag op de telefoon zelf (IndexedDB). Niets gaat naar internet.
-import { STRENGTH_HISTORY } from './data.js';
+import { STRENGTH_HISTORY, RUN_HISTORY } from './data.js';
 
 const DB_NAME = 'tempo';
 const DB_VERSION = 2;
@@ -42,6 +42,10 @@ export const db = {
 
 // Eerste keer openen: eerdere krachttrainingen uit de spreadsheet inladen.
 export async function seedOnce() {
+  if (!(await db.get('settings', 'seeded-runs'))) {
+    for (const r of RUN_HISTORY) if (!(await db.get('logs', r.id))) await db.put('logs', r);
+    await db.put('settings', { id: 'seeded-runs', value: true });
+  }
   const flag = await db.get('settings', 'seeded');
   if (flag) return;
   for (const h of STRENGTH_HISTORY) {

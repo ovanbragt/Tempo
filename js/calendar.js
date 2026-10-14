@@ -1,6 +1,6 @@
 // Stap 3: kalender met trainingen verplaatsen.
 import { SPORTS } from './data.js';
-import { state, sessionsOn, logForSession, moveSession, sessionById } from './plan.js';
+import { state, sessionsOn, logForSession, moveSession, sessionById, isSkipped, setSkipped } from './plan.js';
 import * as D from './dates.js';
 import { esc, icon, fmtKm, fmtNum, fmtDuration, fmtPace, toast } from './ui.js';
 
@@ -65,20 +65,23 @@ function itemCard(s, today) {
         <div class="muted small">${esc(s.detail)}</div>
         ${moved ? `<div class="moved">Verplaatst van ${esc(D.shortLabel(s.origDate))}</div>` : ''}
         ${log ? `<div class="done-line small-line">${icon('check', 16)}<span>Gelogd: ${esc(summary(log))}</span></div>` : ''}
+        ${!log && isSkipped(s.id) ? '<div class="moved">Overgeslagen</div>' : ''}
       </div>
     </div>
     <div class="grid2">
-      ${log || s.race ? '<span></span>' : `<button type="button" class="btn-outline" data-move="${esc(s.id)}">${icon('swap', 18)} Verplaatsen</button>`}
+      ${log || s.race ? '<span></span>' : isSkipped(s.id) ? `<button type="button" class="btn-outline" data-unskip="${esc(s.id)}">Toch inplannen</button>` : `<button type="button" class="btn-outline" data-move="${esc(s.id)}">${icon('swap', 18)} Verplaatsen</button>`}
       <a class="btn small" style="background:${log ? 'var(--ink)' : sport.color}" href="${logRoute(s)}">${log ? 'Log bekijken' : s.date > today ? 'Vooruit loggen' : 'Loggen'}</a>
     </div>
   </div>`;
 }
 
 function movePanel(s) {
-  const monday = D.mondayOf(s.date);
+  // Een gemiste training (in het verleden) verplaats je naar de komende dagen, anders binnen dezelfde week
+  const today = D.today();
+  const first = s.date < today ? today : D.mondayOf(s.date);
   const options = [];
   for (let i = 0; i < 7; i++) {
-    const d = D.addDays(monday, i);
+    const d = D.addDays(first, i);
     if (d === s.date) continue;
     const busy = sessionsOn(d).filter((x) => x.id !== s.id);
     const warn = s.sport === 'run' && runNearby(d, s.id);
@@ -146,6 +149,8 @@ export function viewCalendar(parts) {
     root.addEventListener('click', async (e) => {
       const f = e.target.closest('[data-filter]');
       if (f) { ui.filter = f.dataset.filter; rerender(); return; }
+      const un = e.target.closest('[data-unskip]');
+      if (un) { await setSkipped(un.dataset.unskip, false); toast('Weer ingepland'); rerender(); return; }
       const m = e.target.closest('[data-move]');
       if (m) { ui.moving = m.dataset.move; rerender(); return; }
       if (e.target.closest('[data-cancel]')) { ui.moving = null; rerender(); return; }
