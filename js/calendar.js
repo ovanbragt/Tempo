@@ -1,6 +1,6 @@
 // Stap 3: kalender met trainingen verplaatsen.
 import { SPORTS } from './data.js';
-import { state, sessionsOn, logForSession, moveSession, sessionById, isSkipped, setSkipped } from './plan.js';
+import { state, sessionsOn, logForSession, moveSession, sessionById, isSkipped, setSkipped, setRemoved } from './plan.js';
 import * as D from './dates.js';
 import { esc, icon, fmtKm, fmtNum, fmtDuration, fmtPace, toast } from './ui.js';
 
@@ -10,7 +10,7 @@ const FILTERS = [
   { key: 'run', label: 'Hardlopen' },
   { key: 'swim', label: 'Zwemmen' },
 ];
-const ui = { filter: 'alles', moving: null, msg: null, warn: false };
+const ui = { filter: 'alles', moving: null, msg: null, warn: false, undo: null };
 
 const logRoute = (s) => `#/loggen/${s.sport === 'strength' ? 'kracht' : s.sport === 'swim' ? 'zwemmen' : 'hardlopen'}/${s.id}`;
 const nameOf = (s) => (s.sport === 'strength' || s.race ? s.title : `${s.kind} ${s.title}`);
@@ -72,6 +72,7 @@ function itemCard(s, today) {
       ${log || s.race ? '<span></span>' : isSkipped(s.id) ? `<button type="button" class="btn-outline" data-unskip="${esc(s.id)}">Toch inplannen</button>` : `<button type="button" class="btn-outline" data-move="${esc(s.id)}">${icon('swap', 18)} Verplaatsen</button>`}
       <a class="btn small" style="background:${log ? 'var(--ink)' : sport.color}" href="${logRoute(s)}">${log ? 'Log bekijken' : s.date > today ? 'Vooruit loggen' : 'Loggen'}</a>
     </div>
+    ${log ? '' : `<button type="button" class="btn-link danger" data-remove="${esc(s.id)}">${icon('trash', 16)} Verwijderen uit je planning</button>`}
   </div>`;
 }
 
@@ -135,7 +136,7 @@ export function viewCalendar(parts) {
       <div class="cal-grid">${monthGrid(year, month, selected, today)}</div>
     </div>
     ${selected !== today ? `<a class="btn-link" href="#/kalender/${today}">Naar vandaag</a>` : ''}
-    ${ui.msg ? `<div class="notice ${ui.warn ? '' : 'ok'}" role="status">${esc(ui.msg)}</div>` : ''}
+    ${ui.msg ? `<div class="notice ${ui.warn ? '' : 'ok'}" role="status">${esc(ui.msg)}${ui.undo ? ` <button type="button" class="link-btn" data-restore="${esc(ui.undo)}">Ongedaan maken</button>` : ''}</div>` : ''}
     <div class="section-head"><h2>${esc(D.longLabel(selected))}</h2><span class="muted small">${esc(weekNo)}</span></div>
     ${items.map((s) => itemCard(s, today)).join('')}
     ${extra.map((l) => `<div class="card row"><div class="stripe" style="background:${SPORTS[l.sport].color}"></div><div class="grow"><div class="eyebrow">EXTRA GELOGD</div><div class="row-title">${esc(l.sport === 'swim' ? 'Zwemmen' : l.sport === 'run' ? l.title || 'Losse loop' : `Training ${l.workout}`)}</div><div class="muted small">${esc(summary(l))}</div></div></div>`).join('')}
@@ -145,10 +146,25 @@ export function viewCalendar(parts) {
 
   function mount(root, rerender) {
     ui.msg = null;
+    ui.undo = null;
     if (moving) root.querySelector('.move-panel')?.scrollIntoView({ block: 'start' });
     root.addEventListener('click', async (e) => {
       const f = e.target.closest('[data-filter]');
       if (f) { ui.filter = f.dataset.filter; rerender(); return; }
+      const rm = e.target.closest('[data-remove]');
+      if (rm) {
+        const sess = sessionById(rm.dataset.remove);
+        const name = sess.sport === 'strength' || sess.race ? sess.title : `${sess.kind} ${sess.title}`;
+        if (!confirm(`${name} verwijderen uit je planning?\n\nJe kunt dit direct daarna nog ongedaan maken.`)) return;
+        await setRemoved(sess.id, true);
+        ui.msg = `${name} is verwijderd uit je planning.`;
+        ui.undo = sess.id;
+        ui.warn = false;
+        rerender();
+        return;
+      }
+      const rs = e.target.closest('[data-restore]');
+      if (rs) { await setRemoved(rs.dataset.restore, false); toast('Training staat weer in je planning'); rerender(); return; }
       const un = e.target.closest('[data-unskip]');
       if (un) { await setSkipped(un.dataset.unskip, false); toast('Weer ingepland'); rerender(); return; }
       const m = e.target.closest('[data-move]');

@@ -355,3 +355,6 @@ a.avatar { text-decoration: none; }
 .pred > div { background: var(--ground); border-radius: 12px; padding: 10px; }
 .missed-item { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid #EEEBE5; }
 .missed-item .btn-outline { min-height: 40px; }
+.link-btn { border: none; background: none; padding: 0 2px; font-family: inherit; font-weight: 700; font-size: inherit; color: var(--str); text-decoration: underline; cursor: pointer; min-height: 32px; }
+.btn-link.danger { gap: 6px; margin-top: -4px; }
+.wk-row.removed { color: var(--muted); }

@@ -1,6 +1,6 @@
 // Schema's: overzicht, nieuw schema maken, stoppen.
 import { SPORTS } from './data.js';
-import { state, currentWeek, logForSession, savePlan, deletePlan, sessionsOn } from './plan.js';
+import { state, currentWeek, logForSession, savePlan, deletePlan, sessionsOn, isRemoved, setRemoved } from './plan.js';
 import { buildRunPlan, buildStrengthPlan, buildSwimPlan, RUN_DISTANCES, STRENGTH_GOALS, SWIM_GOALS } from './generator.js';
 import * as D from './dates.js';
 import { esc, num, parseTime, toast, icon } from './ui.js';
@@ -31,7 +31,9 @@ function weekOverview(p) {
   return `<details class="weeks"><summary>Alle weken bekijken</summary>
     <ol class="weeklist">${Object.keys(byWeek).sort((a, b) => a - b).map((w) => `<li>
       <div class="wk-head"><strong>Week ${w}</strong><span class="muted small">${esc(p.phase(Number(w)) || '')}</span></div>
-      ${byWeek[w].sort((a, b) => (a.date < b.date ? -1 : 1)).map((s) => `<div class="wk-row${logForSession(s.id) ? ' done' : ''}"><span>${esc(D.shortLabel(state.moves[s.id] || s.date))}</span><span>${esc(s.sport === 'strength' || s.race ? s.title : `${s.kind}: ${s.title}`)}</span></div>`).join('')}
+      ${byWeek[w].sort((a, b) => (a.date < b.date ? -1 : 1)).map((s) => isRemoved(s.id)
+        ? `<div class="wk-row removed"><span>${esc(D.shortLabel(state.moves[s.id] || s.date))}</span><span><s>${esc(s.sport === 'strength' || s.race ? s.title : `${s.kind}: ${s.title}`)}</s> <button type="button" class="link-btn" data-restore="${esc(s.id)}">Terugzetten</button></span></div>`
+        : `<div class="wk-row${logForSession(s.id) ? ' done' : ''}"><span>${esc(D.shortLabel(state.moves[s.id] || s.date))}</span><span>${esc(s.sport === 'strength' || s.race ? s.title : `${s.kind}: ${s.title}`)}</span></div>`).join('')}
     </li>`).join('')}</ol>
   </details>`;
 }
@@ -44,7 +46,7 @@ function viewList() {
     const sport = SPORTS[p.sport];
     const week = currentWeek(p, today);
     const pct = Math.max(2, Math.round((Math.min(week, p.weeks) / p.weeks) * 100));
-    const upcoming = p.sessions.filter((s) => (state.moves[s.id] || s.date) >= today).length;
+    const upcoming = p.sessions.filter((s) => !isRemoved(s.id) && (state.moves[s.id] || s.date) >= today).length;
     const logged = p.sessions.filter((s) => logForSession(s.id)).length;
     const started = p.sessions.some((s) => s.date <= today);
     return `<article class="card plan">
@@ -227,6 +229,8 @@ export function viewSchemas(parts) {
     html: viewList(),
     mount(root, rerender) {
       root.addEventListener('click', async (e) => {
+        const rs = e.target.closest('[data-restore]');
+        if (rs) { await setRemoved(rs.dataset.restore, false); toast('Training staat weer in je planning'); rerender(); return; }
         const stop = e.target.closest('[data-stop]');
         if (!stop) return;
         const p = state.plans.find((x) => x.id === stop.dataset.stop);

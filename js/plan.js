@@ -97,7 +97,18 @@ export async function deletePlan(id) {
 }
 
 export function allSessions() {
-  return state.plans.flatMap((p) => p.sessions.map((s) => ({ ...s, date: state.moves[s.id] || s.date, origDate: s.date })));
+  return state.plans.flatMap((p) => p.sessions.filter((s) => !isRemoved(s.id)).map((s) => ({ ...s, date: state.moves[s.id] || s.date, origDate: s.date })));
+}
+
+// Een geplande training helemaal weghalen (blijft terug te zetten)
+export function isRemoved(id) {
+  return !!(state.settings.removed || {})[id];
+}
+
+export async function setRemoved(id, on) {
+  const map = { ...(state.settings.removed || {}) };
+  if (on) map[id] = new Date().toISOString().slice(0, 10); else delete map[id];
+  await saveSetting('removed', map);
 }
 
 export function sessionById(id) {
