@@ -1,5 +1,5 @@
 // Stap 2: trainingen en metingen loggen.
-import { EXERCISES } from './data.js';
+import { EXERCISES, KB_EXERCISES } from './data.js';
 import { readGarminFile, matchIntervalLaps } from './fit.js';
 import { recordsForLog } from './records.js';
 import { startRest, stop as stopRest } from './timer.js';
@@ -133,6 +133,7 @@ function lastStrengthLog(workout) {
 }
 
 function suggest(ex, sets, deload) {
+  if (ex.advice) return { kg: ex.startKg ?? null, text: ex.advice };
   const { hi } = repRange(ex);
   const allTop = sets && sets.length && sets.every(([, r]) => r >= hi);
   if (ex.bodyweight) {
@@ -155,7 +156,7 @@ function suggest(ex, sets, deload) {
 function viewStrength(sessionId) {
   const today = D.today();
   let session = sessionId && !sessionId.startsWith('vrij-') ? sessionById(sessionId) : null;
-  let workout = session ? session.workout : sessionId === 'vrij-B' ? 'B' : sessionId === 'vrij-A' ? 'A' : null;
+  let workout = session ? session.workout : sessionId === 'vrij-KB' ? 'KB' : sessionId === 'vrij-B' ? 'B' : sessionId === 'vrij-A' ? 'A' : null;
   if (!session && !workout) {
     session = defaultSession('strength', today);
     workout = session ? session.workout : 'A';
@@ -163,7 +164,7 @@ function viewStrength(sessionId) {
   const key = session ? session.id : `vrij-${workout}`;
   const deload = !!(session && session.deload);
   const plan = session ? planById(session.planId) : null;
-  const exercises = (plan && plan.workouts && plan.workouts[workout]) || EXERCISES[workout];
+  const exercises = (session && session.exercises) || (plan && plan.workouts && plan.workouts[workout]) || (workout === 'KB' ? KB_EXERCISES : EXERCISES[workout]);
   const last = lastStrengthLog(workout);
   const draft = state.settings[`draft-${key}`] || {};
   const existing = session && logForSession(session.id);
@@ -199,7 +200,7 @@ function viewStrength(sessionId) {
     }
     return `<section class="card exercise">
       <h3>${esc(ex.name)}${ex.unilateral ? ' <span class="tag">links en rechts</span>' : ''}</h3>
-      <div class="muted small">${nSets} sets${ex.unilateral ? ' per kant' : ''} · doel ${esc(ex.reps)} reps${ex.perSide ? ' per kant' : ''} · rust ${ex.group === 'onder' || ex.group === 'boven' ? '2–3 min' : '60–90 sec'}</div>
+      <div class="muted small">${nSets} sets${ex.unilateral ? ' per kant' : ''} · doel ${esc(ex.reps)} reps${ex.perSide ? ' per kant' : ''} · rust ${ex.restSec ? `${ex.restSec} sec` : ex.group === 'onder' || ex.group === 'boven' ? '2–3 min' : '60–90 sec'}</div>
       <div class="advice${up ? ' up' : ''}">${up ? icon('up', 18) : ''}<span>${esc(adviceText)}</span></div>
       <div class="sethead"><span>SET</span><span>VORIGE</span><span>KG</span><span>REPS</span><span></span></div>
       ${setRows}
@@ -207,15 +208,15 @@ function viewStrength(sessionId) {
   }).join('');
 
   const recent = state.logs.filter((l) => l.sport === 'strength').slice(0, 5).map((l) => ({
-    id: l.id, kind: 'log', title: `Training ${l.workout}`, sub: `${D.shortLabel(l.date)} · ${fmtNum(l.volume, 0)} kg volume${l.source === 'spreadsheet' ? ' · uit spreadsheet' : ''}`,
+    id: l.id, kind: 'log', title: l.workout === 'KB' ? 'Kettlebell' : `Training ${l.workout}`, sub: `${D.shortLabel(l.date)} · ${fmtNum(l.volume, 0)} kg volume${l.source === 'spreadsheet' ? ' · uit spreadsheet' : ''}`,
   }));
 
   const html = `<main class="page">
     ${segments('kracht')}
-    ${chooser('strength', 'kracht', key, [['vrij-A', 'Losse training A'], ['vrij-B', 'Losse training B']])}
+    ${chooser('strength', 'kracht', key, [['vrij-KB', 'Losse kettlebelltraining'], ['vrij-A', 'Losse training A'], ['vrij-B', 'Losse training B']])}
     <div>
       <div class="eyebrow" style="color:var(--str)">${esc((plan ? plan.name : 'Full Body A/B').toUpperCase())}${session ? ` · WEEK ${session.week}` : ''}${deload ? ' · DELOAD' : ''}</div>
-      <h1 class="display xl">Training ${workout}</h1>
+      <h1 class="display xl">${esc(session && session.title !== `Training ${workout}` ? session.title : `Training ${workout}`)}</h1>
       <div class="muted">${session ? esc(D.longLabel(session.date)) : 'Losse training'}${last ? ` · vorige keer ${esc(D.shortLabel(last.date))}` : ''}</div>
       ${existing ? `<div class="notice">Deze training is al gelogd op ${esc(D.shortLabel(existing.date))}. Opslaan overschrijft die log.</div>` : ''}
     </div>
@@ -226,7 +227,7 @@ function viewStrength(sessionId) {
     </div>
     ${exHtml}
     <button type="button" class="btn" style="background:var(--str)" data-save>Training opslaan</button>
-    <p class="muted small center">Na het afvinken van een set start de rust-timer: 2:30 voor grote oefeningen, 1:15 voor isolatie en core. Pas aan met −15 en +15. Techniek gaat voor gewicht.</p>
+    <p class="muted small center">${workout === 'KB' ? 'Na het afvinken van een set start de rust-timer van 1 minuut. Haast je niet: laat je hartslag en ademhaling tot rust komen.' : 'Na het afvinken van een set start de rust-timer: 2:30 voor grote oefeningen, 1:15 voor isolatie en core.'} Pas aan met −15 en +15. Techniek gaat voor gewicht.</p>
     <section><div class="section-head"><h2>Recent gelogd</h2></div>${recentList(recent, 'Nog niets gelogd.')}</section>
   </main>`;
 
@@ -277,7 +278,7 @@ function viewStrength(sessionId) {
         if (on && !repsEl.value) repsEl.focus();
         if (on) {
           const ex = exercises.find((x) => x.id === rowEl.dataset.row.split('|')[0]);
-          startRest(ex && (ex.group === 'onder' || ex.group === 'boven') ? 150 : 75);
+          startRest(ex && ex.restSec ? ex.restSec : ex && (ex.group === 'onder' || ex.group === 'boven') ? 150 : 75);
         }
         draftData[rowEl.dataset.row] = { ...(draftData[rowEl.dataset.row] || {}), done: on };
         persistDraft();
@@ -314,7 +315,7 @@ function viewStrength(sessionId) {
         await saveLog(saved);
         await saveSetting(`draft-${key}`, null);
         stopRest();
-        announce(`Training ${workout} opgeslagen · ${fmtNum(volume, 0)} kg volume`, saved.id);
+        announce(`${workout === 'KB' ? 'Kettlebelltraining' : `Training ${workout}`} opgeslagen · ${fmtNum(volume, 0)} kg volume`, saved.id);
         location.hash = '#/vandaag';
       }
     });

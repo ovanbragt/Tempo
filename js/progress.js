@@ -1,5 +1,5 @@
 // Stap 4: progressie per week, maand en jaar.
-import { EXERCISES } from './data.js';
+import { EXERCISES, KB_EXERCISES } from './data.js';
 import { state, allSessions, logForSession } from './plan.js';
 import * as D from './dates.js';
 import { esc, fmtNum, fmtKm, fmtPace, fmtDuration } from './ui.js';
@@ -334,15 +334,16 @@ function strengthSection(period, today) {
     const n = planned.filter((s) => bucketKey(s.date, period) === k).length;
     return { key: k, label: bucketLabel(k, period), long: bucketLong(k, period), current: k === curKey, done: ls.reduce((a, l) => a + (l.volume || 0), 0), extra: `${ls.length} van ${n} trainingen` };
   });
-  const recent = ['A', 'B'].map((w) => {
+  const recent = (logs.some((l) => l.workout === 'KB') || allSessions().some((x) => x.workout === 'KB') ? ['KB', 'A', 'B'] : ['A', 'B']).map((w) => {
+    const label = w === 'KB' ? 'Kettlebell' : `Training ${w}`;
     const ls = logs.filter((l) => l.workout === w);
-    if (!ls.length) return `<li><span>Training ${w}</span><span class="muted">nog niet gelogd</span></li>`;
+    if (!ls.length) return `<li><span>${label}</span><span class="muted">nog niet gelogd</span></li>`;
     const [last, prev] = ls;
     const diff = prev && prev.volume ? Math.round(((last.volume - prev.volume) / prev.volume) * 100) : null;
-    return `<li><span>Training ${w} <span class="muted small">${esc(D.shortLabel(last.date))}</span></span><span><strong>${fmtNum(last.volume, 0)} kg</strong>${diff != null ? ` <span class="delta ${diff >= 0 ? 'up' : 'down'}">${diff >= 0 ? '+' : ''}${diff}%</span>` : ''}</span></li>`;
+    return `<li><span>${label} <span class="muted small">${esc(D.shortLabel(last.date))}</span></span><span><strong>${fmtNum(last.volume, 0)} kg</strong>${diff != null ? ` <span class="delta ${diff >= 0 ? 'up' : 'down'}">${diff >= 0 ? '+' : ''}${diff}%</span>` : ''}</span></li>`;
   }).join('');
   const best = bestSets();
-  const rows = [...EXERCISES.A, ...EXERCISES.B].filter((e) => best[e.id]).map((e) => {
+  const rows = [...KB_EXERCISES, ...EXERCISES.A, ...EXERCISES.B].filter((e) => best[e.id]).map((e) => {
     const b = best[e.id];
     return `<li><span>${esc(e.name)}</span><span><strong>${b.kg ? `${fmtNum(b.kg)} kg × ` : ''}${b.reps}</strong> <span class="muted small">${esc(D.dayMonth(b.date))}</span></span></li>`;
   }).join('');

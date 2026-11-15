@@ -1,10 +1,10 @@
 // Persoonlijke records en wedstrijdvoorspelling.
-import { EXERCISES } from './data.js';
+import { EXERCISES, KB_EXERCISES } from './data.js';
 import { state } from './plan.js';
 import * as D from './dates.js';
 import { fmtNum, fmtKm, fmtPace, fmtDuration } from './ui.js';
 
-const EX_NAMES = Object.fromEntries([...EXERCISES.A, ...EXERCISES.B].map((e) => [e.id, e.name]));
+const EX_NAMES = Object.fromEntries([...EXERCISES.A, ...EXERCISES.B, ...KB_EXERCISES].map((e) => [e.id, e.name]));
 
 function bestSetOf(val) {
   const lists = Array.isArray(val) ? [val] : [val.L || [], val.R || []];

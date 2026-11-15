@@ -139,7 +139,7 @@ export function viewCalendar(parts) {
     ${ui.msg ? `<div class="notice ${ui.warn ? '' : 'ok'}" role="status">${esc(ui.msg)}${ui.undo ? ` <button type="button" class="link-btn" data-restore="${esc(ui.undo)}">Ongedaan maken</button>` : ''}</div>` : ''}
     <div class="section-head"><h2>${esc(D.longLabel(selected))}</h2><span class="muted small">${esc(weekNo)}</span></div>
     ${items.map((s) => itemCard(s, today)).join('')}
-    ${extra.map((l) => `<div class="card row"><div class="stripe" style="background:${SPORTS[l.sport].color}"></div><div class="grow"><div class="eyebrow">EXTRA GELOGD</div><div class="row-title">${esc(l.sport === 'swim' ? 'Zwemmen' : l.sport === 'run' ? l.title || 'Losse loop' : `Training ${l.workout}`)}</div><div class="muted small">${esc(summary(l))}</div></div></div>`).join('')}
+    ${extra.map((l) => `<div class="card row"><div class="stripe" style="background:${SPORTS[l.sport].color}"></div><div class="grow"><div class="eyebrow">EXTRA GELOGD</div><div class="row-title">${esc(l.sport === 'swim' ? 'Zwemmen' : l.sport === 'run' ? l.title || 'Losse loop' : (l.workout === 'KB' ? 'Kettlebell' : `Training ${l.workout}`))}</div><div class="muted small">${esc(summary(l))}</div></div></div>`).join('')}
     ${!items.length && !extra.length ? '<div class="card rest"><div class="row-title">Rustdag</div><div class="muted small">Geen training gepland.</div></div>' : ''}
     ${moving ? movePanel(moving) : ''}
   </main>`;

@@ -53,7 +53,7 @@ function sessionCard(s, { big = false } = {}) {
   return `<article class="card session${log ? ' is-done' : ''}">
     <div class="topbar" style="background:${sport.color}"></div>
     <div class="session-body">
-      <div class="eyebrow" style="color:${sport.color}">${esc(sport.label.toUpperCase())} · ${esc(s.kind.toUpperCase())} ${flags}</div>
+      <div class="eyebrow" style="color:${sport.color}">${esc(sport.label.toUpperCase())}${s.kind === 'Kracht' ? (s.short ? ` · ${esc(s.short.toUpperCase())}` : '') : ` · ${esc(s.kind.toUpperCase())}`} ${flags}</div>
       <h2 class="display">${esc(s.title)}</h2>
       <p class="session-detail">${esc(s.detail)}</p>
       ${s.sport === 'run' && !s.race && !log ? '<p class="muted small">+ 10 min inlopen, 5–10 min uitlopen</p>' : ''}
@@ -129,7 +129,7 @@ function viewVandaag() {
 
     ${todays.length ? todays.map((s) => sessionCard(s, { big: true })).join('') : `<div class="card rest"><div class="eyebrow">RUSTDAG</div><div class="row-title">Vandaag staat er niets gepland.</div><div class="muted small">Herstel hoort bij het schema. Toch iets gedaan? <a href="#/loggen">Log het hier.</a></div></div>`}
 
-    ${extraLogs.map((l) => `<div class="card row"><div class="stripe" style="background:${SPORTS[l.sport].color}"></div><div class="grow"><div class="eyebrow">OOK GELOGD VANDAAG</div><div class="row-title">${esc(l.sport === 'swim' ? `Zwemmen · ${fmtNum(l.meters, 0)} m` : l.sport === 'run' ? `${l.kind} · ${fmtKm(l.km)} km` : `Training ${l.workout}`)}</div></div>${icon('check', 20)}</div>`).join('')}
+    ${extraLogs.map((l) => `<div class="card row"><div class="stripe" style="background:${SPORTS[l.sport].color}"></div><div class="grow"><div class="eyebrow">OOK GELOGD VANDAAG</div><div class="row-title">${esc(l.sport === 'swim' ? `Zwemmen · ${fmtNum(l.meters, 0)} m` : l.sport === 'run' ? `${l.kind} · ${fmtKm(l.km)} km` : (l.workout === 'KB' ? 'Kettlebell' : `Training ${l.workout}`))}</div></div>${icon('check', 20)}</div>`).join('')}
 
     <section>
       <div class="section-head"><h2>Deze week</h2><a href="#/kalender">Kalender</a></div>
@@ -138,7 +138,7 @@ function viewVandaag() {
           const ss = sessionsOn(d);
           const isToday = d === today;
           const allDone = ss.length && ss.every((s) => logForSession(s.id));
-          const label = ss.length ? ss.map((s) => (s.sport === 'strength' ? `Kracht ${s.workout}` : s.sport === 'swim' ? `Zwem ${fmtNum(s.meters, 0)} m` : s.kind === 'Interval' ? 'Interval' : s.race ? 'Race' : `${fmtKm(s.km)} km`)).join(' + ') : 'Rust';
+          const label = ss.length ? ss.map((s) => (s.sport === 'strength' ? (s.short || `Kracht ${s.workout}`) : s.sport === 'swim' ? `Zwem ${fmtNum(s.meters, 0)} m` : s.kind === 'Interval' ? 'Interval' : s.race ? 'Race' : `${fmtKm(s.km)} km`)).join(' + ') : 'Rust';
           return `<div class="day${isToday ? ' today' : ''}${allDone ? ' done' : ''}" aria-label="${D.WD_LONG[i]} ${D.parse(d).getDate()}: ${esc(label)}${allDone ? ', gelogd' : ''}">
             <span class="wd">${D.WD_SHORT[i]}</span>
             <span class="dn">${D.parse(d).getDate()}</span>

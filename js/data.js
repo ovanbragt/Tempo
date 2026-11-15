@@ -111,7 +111,8 @@ export const EXERCISES = {
 function buildFullBody() {
   const sessions = [];
   // Week 3 begint op maandag 12 oktober 2026; week 1 en 2 staan al in de spreadsheet.
-  for (let week = 3; week <= 12; week++) {
+  // Vanaf maandag 16 november vervangen door het kettlebellschema: Full Body loopt t/m week 7.
+  for (let week = 3; week <= 7; week++) {
     const monday = addDays('2026-10-12', (week - 3) * 7);
     const deload = week === 6 || week === 12;
     const detail = deload ? 'Deload: 2 sets, ±15% lichter' : '8 oefeningen · ± 50 min';
@@ -124,7 +125,7 @@ function buildFullBody() {
     name: 'Full Body A/B',
     goal: 'Sterker worden met dubbele progressie',
     start: '2026-08-19',
-    end: addDays('2026-10-12', 9 * 7 + 4),
+    end: '2026-11-13',
     weeks: 12,
     weekOffset: 2,
     perWeek: 2,
@@ -168,8 +169,51 @@ function buildHalfMarathon() {
   };
 }
 
+// ---------- Kracht: StrongMan Kettlebell Jaarprogramma, periode 1 (accumulatie, 8 weken) ----------
+// Bron: 100719-strongman-kettlebell-jaarprogramma-periode-1.pdf (Google Drive).
+// Swing 10 × 10 en goblet squat 5 × 10 met 12 kg; push-up 10 sets, opbouw van 5 naar 10 herhalingen.
+const PUSHUP_REPS = [5, 6, 7, 8, 9, 10, 10, 10];
+export const KB_EXERCISES = [
+  { id: 'kb-swing', name: 'Kettlebell Swing', sets: 10, reps: '10', startKg: 12, group: 'kb', restSec: 60,
+    advice: 'Houd 12 kg aan: deze fase draait om volume. Om en om met een set push-ups.' },
+  { id: 'kb-pushup', name: 'Push-up', sets: 10, reps: '10', startKg: null, group: 'kb', bodyweight: true, restSec: 60 },
+  { id: 'kb-goblet', name: 'Goblet Squat', sets: 5, reps: '10', startKg: 12, group: 'kb', restSec: 60,
+    advice: 'Na de swings en push-ups. 12 kg, 1 minuut pauze tussen de sets.' },
+];
+
+function buildKettlebell() {
+  const sessions = [];
+  const days = [0, 2, 4]; // ma, wo, vr
+  for (let week = 1; week <= 8; week++) {
+    const monday = addDays('2026-11-16', (week - 1) * 7);
+    const pu = PUSHUP_REPS[week - 1];
+    const exercises = KB_EXERCISES.map((e) => (e.id === 'kb-pushup'
+      ? { ...e, reps: String(pu), advice: `Doel week ${week}: 10 sets van ${pu} goede herhalingen, om en om met de swings.${pu < 10 ? ' Elke week één herhaling meer.' : ''}` }
+      : e));
+    days.forEach((d, i) => sessions.push({
+      id: `kb-${week}-${i + 1}`, planId: 'kettlebell-p1', sport: 'strength', week, date: addDays(monday, d),
+      kind: 'Kracht', title: 'Kettlebell', workout: 'KB', short: 'Kettlebell',
+      detail: `Swing 10×10 · push-up 10×${pu} · goblet squat 5×10 · ± 30 min`, exercises,
+    }));
+  }
+  return {
+    id: 'kettlebell-p1',
+    sport: 'strength',
+    name: 'Kettlebell periode 1: accumulatie',
+    goal: 'Volume maken met 12 kg · swing 10×10, push-up 10×5 naar 10×10, goblet squat 5×10',
+    start: '2026-11-16',
+    end: sessions[sessions.length - 1].date,
+    weeks: 8,
+    perWeek: 3,
+    days: 'ma, wo en vr · ± 30 minuten',
+    phase: () => 'Accumulatie: volume maken',
+    sessions,
+    workouts: { KB: KB_EXERCISES },
+  };
+}
+
 export function buildPlans() {
-  return [buildDomloop(), buildHalfMarathon(), buildFullBody()];
+  return [buildDomloop(), buildHalfMarathon(), buildKettlebell(), buildFullBody()];
 }
 
 // Singelloop Utrecht (4 okt 2026), uit het Dom tot Domloop-schema: startpunt voor de voorspelling
