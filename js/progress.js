@@ -279,6 +279,7 @@ function runSection(period, today) {
     { id: 'dom-12-long', title: '5 km-test', target: '≤ 27:30', sub: 'Langzamer dan 28:30: intervallen fase 3 rustiger' },
     { id: 'dom-18-long', title: '10 km-test', target: '≤ 54:30', sub: 'Bepaalt je wedstrijdtempo (5:30, 5:40 of 5:50)' },
     { id: 'dom-race', title: 'Dom tot Domloop', target: '1:28:31', sub: '16,1 km op 5:30 min/km' },
+    { id: 'hm-race', title: 'Halve marathon Amersfoort', target: '± 2:01', sub: '21,1 km op ± 5:45 min/km (Domloop-tempo + 15 sec)' },
   ].map((m) => {
     const s = m.id ? sessions.find((x) => x.id === m.id) : null;
     const log = m.id ? logForSession(m.id) : null;

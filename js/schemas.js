@@ -57,7 +57,7 @@ function viewList() {
         <div class="muted small">${esc(p.goal)}</div>
         <div class="muted small">${esc(p.days)}</div>
         <div class="bar light"><div style="width:${started ? pct : 2}%;background:${sport.color}"></div></div>
-        <div class="plan-foot"><span>${started ? `Week ${week} van ${p.weeks}` : `Start ${esc(D.shortLabel(p.sessions[0]?.date || p.start))}`}</span><span class="muted">${esc(started ? p.phase(week) : `${p.weeks} weken`)}</span></div>
+        <div class="plan-foot"><span>${started ? `Week ${week} van ${p.weeks}` : `Start ${esc(D.shortLabel(p.sessions[0]?.date || p.start))}`}</span><span class="muted">${esc(started ? p.phase(week) : `${new Set(p.sessions.map((x) => x.week)).size} weken`)}</span></div>
         <div class="muted small">${logged} gelogd · nog ${upcoming} trainingen tot ${esc(D.dayMonth(p.end))}</div>
         ${weekOverview(p)}
         ${p.custom ? `<button type="button" class="btn-link danger" data-stop="${esc(p.id)}">Schema stoppen</button>` : ''}

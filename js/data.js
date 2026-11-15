@@ -31,7 +31,7 @@ const DOMLOOP_WEEKS = [
   ['2027-01-31', '16 km, laatste 3 km op 5:40', 16, '4 × 1,5 km op 5:30, 2:30 min pauze', 6, '8 km', 8],
   ['2027-02-07', '10 km-test: 2 km inlopen, 10 km voluit, 1 km uitlopen', 13, '8 × 400 m op 5:15–5:20, 200 m dribbelen', 3.2, '7 km', 7],
   ['2027-02-14', '16 km, laatste 4 km op 5:35', 16, '3 × 2 km op 5:30, 3 min pauze', 6, '8 km', 8],
-  ['2027-02-21', '18 km rustig', 18, '5 × 1 km op 5:20–5:25, 2 min pauze', 5, '8 km', 8],
+  ['2027-02-21', '20 km rustig (lukt het niet, stop bij 18 km)', 20, '5 × 1 km op 5:20–5:25, 2 min pauze', 5, '8 km', 8],
   ['2027-02-28', '16 km met 3 × 3 km op 5:30, 1 km rustig ertussen', 16, '2 × 3 km op 5:30, 3 min pauze', 6, '8 km', 8],
   ['2027-03-07', '12 km, laatste 3 km op 5:30', 12, '4 × 1 km op 5:30, 2 min pauze', 4, '6 km', 6],
   ['2027-03-14', '8 km rustig', 8, '3 × 1 km op 5:30, 2 min pauze', 3, '4 km + 4 × 100 m versnellen', 4],
@@ -134,8 +134,42 @@ function buildFullBody() {
   };
 }
 
+// ---------- Hardlopen: halve marathon Amersfoort (vervolg op de Dom tot Domloop) ----------
+// Twee weken na de Domloop: eerst herstellen, dan scherp en uitgerust naar 21,1 km.
+// Halvemarathontempo = Domloop-tempo + 15 sec/km (bij 5:30 wordt dat 5:45 min/km).
+function buildHalfMarathon() {
+  const easy = '6:40–7:10 min/km, rustig';
+  const s = (id, week, date, kind, title, km, detail, extra = {}) => ({ id: `hm-${id}`, planId: 'hm-amersfoort', sport: 'run', week, date, kind, title, km, detail, ...extra });
+  const sessions = [
+    s('24-easy', 24, '2027-03-23', 'Easy Run', '5 km herstel', 5, `${easy}. Benen los na de Domloop, niet versnellen.`),
+    s('24-int', 24, '2027-03-25', 'Interval', '6 × 400 m', 2.4, 'op halvemarathontempo (± 5:45), 200 m dribbelen. Licht: voel of je benen hersteld zijn.'),
+    s('24-long', 24, '2027-03-28', 'Long Run', '14 km, laatste 3 km op 5:45', 14, `${easy}, de laatste 3 km op halvemarathontempo. Oefen drinken en een gel.`),
+    s('25-easy', 25, '2027-03-30', 'Easy Run', '6 km', 6, easy),
+    s('25-int', 25, '2027-04-01', 'Interval', '3 × 1 km', 3, 'op halvemarathontempo (± 5:45), 2 min pauze. Kort en fris, niet harder.'),
+    s('race', 25, '2027-04-04', 'Wedstrijd', 'Halve marathon Amersfoort · 21,1 km', 21.1, 'Eerste 5 km op 5:50, daarna 5:45. Pas na 15 km versnellen als het goed voelt.', { race: true }),
+  ];
+  return {
+    id: 'hm-amersfoort',
+    sport: 'run',
+    name: 'Halve marathon Amersfoort 2027',
+    goal: 'Halve marathon (21,1 km) in ± 2:01 · 5:45 min/km',
+    start: '2027-03-21',
+    end: '2027-04-04',
+    raceDate: '2027-04-04',
+    raceName: 'Halve marathon Amersfoort',
+    goalTitle: 'Halve marathon in ± 2:01',
+    goalSec: 7279,
+    goalSub: '5:45 min/km · zo 4 apr 2027',
+    weeks: 25,
+    perWeek: 3,
+    days: 'vervolg op de Dom tot Domloop · di easy run · do interval · zo long run',
+    phase: (w) => (w === 24 ? 'Herstel na de Dom tot Domloop' : 'Taper naar de halve marathon'),
+    sessions,
+  };
+}
+
 export function buildPlans() {
-  return [buildDomloop(), buildFullBody()];
+  return [buildDomloop(), buildHalfMarathon(), buildFullBody()];
 }
 
 // Singelloop Utrecht (4 okt 2026), uit het Dom tot Domloop-schema: startpunt voor de voorspelling
