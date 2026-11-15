@@ -171,14 +171,14 @@ function buildHalfMarathon() {
 
 // ---------- Kracht: StrongMan Kettlebell Jaarprogramma, periode 1 (accumulatie, 8 weken) ----------
 // Bron: 100719-strongman-kettlebell-jaarprogramma-periode-1.pdf (Google Drive).
-// Swing 10 × 10 en goblet squat 5 × 10 met 12 kg; push-up 10 sets, opbouw van 5 naar 10 herhalingen.
+// Swing 10 × 10 en goblet squat 10 × 10 (op verzoek, was 5 × 10) met 12 kg; push-up 10 sets, opbouw van 5 naar 10 herhalingen.
 const PUSHUP_REPS = [5, 6, 7, 8, 9, 10, 10, 10];
 export const KB_EXERCISES = [
   { id: 'kb-swing', name: 'Kettlebell Swing', sets: 10, reps: '10', startKg: 12, group: 'kb', restSec: 60,
     advice: 'Houd 12 kg aan: deze fase draait om volume. Om en om met een set push-ups.' },
   { id: 'kb-pushup', name: 'Push-up', sets: 10, reps: '10', startKg: null, group: 'kb', bodyweight: true, restSec: 60 },
-  { id: 'kb-goblet', name: 'Goblet Squat', sets: 5, reps: '10', startKg: 12, group: 'kb', restSec: 60,
-    advice: 'Na de swings en push-ups. 12 kg, 1 minuut pauze tussen de sets.' },
+  { id: 'kb-goblet', name: 'Goblet Squat', sets: 10, reps: '10', startKg: 12, group: 'kb', restSec: 60,
+    advice: 'Na de swings en push-ups. 10 sets van 10 met 12 kg, 1 minuut pauze tussen de sets.' },
 ];
 
 function buildKettlebell() {
@@ -193,19 +193,19 @@ function buildKettlebell() {
     days.forEach((d, i) => sessions.push({
       id: `kb-${week}-${i + 1}`, planId: 'kettlebell-p1', sport: 'strength', week, date: addDays(monday, d),
       kind: 'Kracht', title: 'Kettlebell', workout: 'KB', short: 'Kettlebell',
-      detail: `Swing 10×10 · push-up 10×${pu} · goblet squat 5×10 · ± 30 min`, exercises,
+      detail: `Swing 10×10 · push-up 10×${pu} · goblet squat 10×10 · ± 35 min`, exercises,
     }));
   }
   return {
     id: 'kettlebell-p1',
     sport: 'strength',
     name: 'Kettlebell periode 1: accumulatie',
-    goal: 'Volume maken met 12 kg · swing 10×10, push-up 10×5 naar 10×10, goblet squat 5×10',
+    goal: 'Volume maken met 12 kg · swing 10×10, push-up 10×5 naar 10×10, goblet squat 10×10',
     start: '2026-11-16',
     end: sessions[sessions.length - 1].date,
     weeks: 8,
     perWeek: 3,
-    days: 'ma, wo en vr · ± 30 minuten',
+    days: 'ma, wo en vr · ± 35 minuten',
     phase: () => 'Accumulatie: volume maken',
     sessions,
     workouts: { KB: KB_EXERCISES },
