@@ -62,6 +62,14 @@ function buildDomloop() {
     sessions.push({ ...base, id: `dom-${week}-easy`, date: easyDate, kind: 'Easy Run', title: easy, km: easyKm, detail: easyPace });
     sessions.push({ ...base, id: `dom-${week}-int`, date: intDate, kind: 'Interval', title: interval.split(' op ')[0], km: intKm, detail: interval.includes(' op ') ? 'op ' + interval.split(' op ')[1] : interval });
   });
+  // Op verzoek (18 nov 2026): alle looptrainingen vanaf maandag 16 november een week later.
+  // Om de wedstrijddatum te houden vervalt rustweek 11 (20–24 dec); vanaf 27 december weer op het oorspronkelijke schema.
+  const SHIFT_FROM = '2026-11-16';
+  const SHIFT_TO = '2026-12-19';
+  for (let i = sessions.length - 1; i >= 0; i--) {
+    if (sessions[i].week === 11) sessions.splice(i, 1);
+    else if (sessions[i].date >= SHIFT_FROM && sessions[i].date <= SHIFT_TO) sessions[i].date = addDays(sessions[i].date, 7);
+  }
   sessions.push({ id: 'dom-race', planId: 'domloop', sport: 'run', week: 23, date: '2027-03-20', kind: 'Wedstrijd', title: 'Dom tot Domloop · 10 Engelse Mijl', km: 16.1, detail: 'Start 2 km op 5:35, daarna 5:30 min/km', race: true });
   return {
     id: 'domloop',
@@ -126,7 +134,7 @@ function buildFullBody() {
     goal: 'Sterker worden met dubbele progressie',
     start: '2026-08-19',
     end: '2026-11-13',
-    weeks: 12,
+    weeks: 7, // gestopt na week 7, vervangen door kettlebell
     weekOffset: 2,
     perWeek: 2,
     days: 'ma Training A · vr Training B',
@@ -185,7 +193,7 @@ function buildKettlebell() {
   const sessions = [];
   const days = [0, 2, 4]; // ma, wo, vr
   for (let week = 1; week <= 8; week++) {
-    const monday = addDays('2026-11-16', (week - 1) * 7);
+    const monday = addDays('2026-11-23', (week - 1) * 7); // op verzoek een week later gestart
     const pu = PUSHUP_REPS[week - 1];
     const exercises = KB_EXERCISES.map((e) => (e.id === 'kb-pushup'
       ? { ...e, reps: String(pu), advice: `Doel week ${week}: 10 sets van ${pu} goede herhalingen, om en om met de swings.${pu < 10 ? ' Elke week één herhaling meer.' : ''}` }
@@ -201,7 +209,7 @@ function buildKettlebell() {
     sport: 'strength',
     name: 'Kettlebell periode 1: accumulatie',
     goal: 'Volume maken met 12 kg · swing 10×10, push-up 10×5 naar 10×10, goblet squat 10×10',
-    start: '2026-11-16',
+    start: '2026-11-23',
     end: sessions[sessions.length - 1].date,
     weeks: 8,
     perWeek: 3,
