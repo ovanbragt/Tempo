@@ -198,22 +198,33 @@ function buildKettlebell() {
     const exercises = KB_EXERCISES.map((e) => (e.id === 'kb-pushup'
       ? { ...e, reps: String(pu), advice: `Doel week ${week}: 10 sets van ${pu} goede herhalingen, om en om met de swings.${pu < 10 ? ' Elke week één herhaling meer.' : ''}` }
       : e));
-    days.forEach((d, i) => sessions.push({
-      id: `kb-${week}-${i + 1}`, planId: 'kettlebell-p1', sport: 'strength', week, date: addDays(monday, d),
-      kind: 'Kracht', title: 'Kettlebell', workout: 'KB', short: 'Kettlebell',
-      detail: `Swing 10×10 · push-up 10×${pu} · goblet squat 10×10 · ± 35 min`, exercises,
-    }));
+    days.forEach((d, i) => {
+      // Op verzoek (25 nov 2026): woensdag Full Body Training A en B om en om in plaats van kettlebell.
+      if (d === 2) {
+        const w = week % 2 === 1 ? 'A' : 'B';
+        sessions.push({
+          id: `kb-${week}-wo${w}`, planId: 'kettlebell-p1', sport: 'strength', week, date: addDays(monday, d),
+          kind: 'Kracht', title: `Training ${w}`, workout: w, short: `Kracht ${w}`, detail: '8 oefeningen · ± 50 min',
+        });
+        return;
+      }
+      sessions.push({
+        id: `kb-${week}-${i + 1}`, planId: 'kettlebell-p1', sport: 'strength', week, date: addDays(monday, d),
+        kind: 'Kracht', title: 'Kettlebell', workout: 'KB', short: 'Kettlebell',
+        detail: `Swing 10×10 · push-up 10×${pu} · goblet squat 10×10 · ± 35 min`, exercises,
+      });
+    });
   }
   return {
     id: 'kettlebell-p1',
     sport: 'strength',
-    name: 'Kettlebell periode 1: accumulatie',
-    goal: 'Volume maken met 12 kg · swing 10×10, push-up 10×5 naar 10×10, goblet squat 10×10',
+    name: 'Kettlebell periode 1 + Training A/B',
+    goal: 'Kettlebell met 12 kg: swing 10×10, push-up 10×5 naar 10×10, goblet squat 10×10 · woensdag Full Body A of B',
     start: '2026-11-23',
     end: sessions[sessions.length - 1].date,
     weeks: 8,
     perWeek: 3,
-    days: 'ma, wo en vr · ± 35 minuten',
+    days: 'ma en vr kettlebell · wo Training A en B om en om',
     phase: () => 'Accumulatie: volume maken',
     sessions,
     workouts: { KB: KB_EXERCISES },
