@@ -200,8 +200,9 @@ function buildKettlebell() {
       : e));
     days.forEach((d, i) => {
       // Op verzoek (25 nov 2026): woensdag Full Body Training A en B om en om in plaats van kettlebell.
-      if (d === 2) {
-        const w = week % 2 === 1 ? 'A' : 'B';
+      // Week 1 (25 nov) bleef kettlebell; A/B begint op woensdag 2 december.
+      if (d === 2 && week >= 2) {
+        const w = week % 2 === 0 ? 'A' : 'B';
         sessions.push({
           id: `kb-${week}-wo${w}`, planId: 'kettlebell-p1', sport: 'strength', week, date: addDays(monday, d),
           kind: 'Kracht', title: `Training ${w}`, workout: w, short: `Kracht ${w}`, detail: '8 oefeningen · ± 50 min',
